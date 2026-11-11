@@ -1,0 +1,203 @@
+// Mock data for FinSight Dashboard
+// All data is realistic for an entrepreneur in Mumbai, October 2026
+
+export const mockUserData = {
+  name: "Arjun Mehta",
+  email: "arjun.mehta@fintech.co",
+  location: "Mumbai",
+  avatar: "https://ui-avatars.com/api/?name=Arjun+Mehta&background=2F6F63&color=fff",
+};
+
+export const summaryCards = {
+  totalBalance: {
+    label: "Total Balance",
+    amount: 842850,
+    change: 12.5,
+    previousMonth: 749200,
+    icon: "wallet",
+    color: "teal",
+  },
+  income: {
+    label: "Income",
+    amount: 265000,
+    change: 8.2,
+    previousMonth: 244900,
+    icon: "trending-up",
+    color: "green",
+  },
+  expenses: {
+    label: "Expenses",
+    amount: 118420,
+    change: 14.1,
+    previousMonth: 103700,
+    icon: "trending-down",
+    color: "red",
+  },
+  savings: {
+    label: "Savings Retained",
+    amount: 146580,
+    change: 10.5,
+    previousMonth: 132600,
+    icon: "piggy-bank",
+    color: "teal",
+  },
+};
+
+export const spendingByCategory = {
+  title: "Spending by category",
+  subtitle: "October 2026 • Total outflow ₹1,18,420",
+  categories: [
+    { name: "Rent", amount: 42000, percentage: 35.5, color: "#2F6F63" },
+    { name: "Food", amount: 26400, percentage: 22.3, color: "#9BE7D3" },
+    { name: "Shopping", amount: 14200, percentage: 12.0, color: "#A8D5D5" },
+    { name: "Transport", amount: 12800, percentage: 10.8, color: "#C8E6E0" },
+    { name: "Bills", amount: 11600, percentage: 9.8, color: "#E0F2F0" },
+    { name: "Other", amount: 11020, percentage: 9.3, color: "#F0F8F7" },
+  ],
+};
+
+export const incomeVsExpenses = {
+  title: "Income vs expenses",
+  subtitle: "Trailing 6 months comparison (May - Oct 2026)",
+  months: [
+    { month: "May", income: 245000, expenses: 98000 },
+    { month: "Jun", income: 258000, expenses: 102000 },
+    { month: "Jul", income: 270000, expenses: 105000 },
+    { month: "Aug", income: 252000, expenses: 101000 },
+    { month: "Sep", income: 265000, expenses: 108000 },
+    { month: "Oct '26", income: 265000, expenses: 118420 },
+  ],
+};
+
+export const monthlyBudgets = [
+  {
+    id: 1,
+    name: "Food & Groceries",
+    spent: 28400,
+    limit: 30000,
+    status: "ok", // under limit
+  },
+  {
+    id: 2,
+    name: "Shopping & Lifestyle",
+    spent: 14200,
+    limit: 12000,
+    status: "warning", // near or at limit - amber
+  },
+  {
+    id: 3,
+    name: "Transportation",
+    spent: 12800,
+    limit: 15000,
+    status: "ok", // under limit
+  },
+  {
+    id: 4,
+    name: "Utilities & Subscriptions",
+    spent: 11600,
+    limit: 7500,
+    status: "danger", // over limit - red
+  },
+];
+
+export const financialGoals = [
+  {
+    id: 1,
+    name: "Emergency Reserve (6 Mos)",
+    icon: "shield",
+    target: 300000,
+    saved: 230000,
+    dueDate: "Dec 2026",
+    percentage: 76.67,
+    color: "teal",
+  },
+  {
+    id: 2,
+    name: "Workstation Upgrade (Mac Studio)",
+    icon: "laptop",
+    target: 160000,
+    saved: 123200,
+    dueDate: "Nov 2026",
+    percentage: 77.0,
+    color: "teal",
+  },
+  {
+    id: 3,
+    name: "Japan Travel Portfolio",
+    icon: "plane",
+    target: 250000,
+    saved: 85000,
+    dueDate: "Mar 2027",
+    percentage: 34.0,
+    color: "teal",
+  },
+];
+
+export const recentTransactions = [
+  {
+    id: 1,
+    date: "Oct 24, 2026",
+    description: "Client Retainer - Innovate Labs",
+    details: "B2B Advisory Invoice",
+    category: "Income",
+    account: "HDFC Business Bank",
+    amount: 125000,
+    status: "completed",
+    icon: "briefcase",
+  },
+  {
+    id: 2,
+    date: "Oct 23, 2026",
+    description: "Office Space Lease",
+    details: "(Bandra West) Monthly commercial rent",
+    category: "Rent & Housing",
+    account: "ICICI Current",
+    amount: -45000,
+    status: "completed",
+    icon: "building",
+  },
+  {
+    id: 3,
+    date: "Oct 22, 2026",
+    description: "Fresh Produce & Whole Foods",
+    details: "Pg Hill grocery store",
+    category: "Food & Dining",
+    account: "Amex Card x 4092",
+    amount: -4300,
+    status: "completed",
+    icon: "shopping-bag",
+  },
+  {
+    id: 4,
+    date: "Oct 20, 2026",
+    description: "AWS Cloud Infrastructure",
+    details: "Monthly production",
+    category: "Bills & Utilities",
+    account: "HDFC Business Bank",
+    amount: -11420,
+    status: "completed",
+    icon: "server",
+  },
+  {
+    id: 5,
+    date: "Oct 18, 2026",
+    description: "Strategy Consulting - FinEdge Ltd",
+    icon: "trending-up",
+    details: "Project milestone payment",
+    category: "Income",
+    account: "ICICI Current",
+    amount: 180000,
+    status: "completed",
+  },
+];
+
+export const filterCategories = [
+  "All",
+  "Income",
+  "Food",
+  "Rent",
+  "Shopping",
+  "Bills",
+  "Transport",
+  "Other",
+];
