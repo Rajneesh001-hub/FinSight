@@ -3,6 +3,8 @@ import { Sidebar } from "./components/Sidebar";
 import { TopBar } from "./components/TopBar";
 import { Dashboard } from "./pages/Dashboard";
 import { Transactions } from "./pages/Transactions";
+import { Budgets } from "./pages/Budgets";
+import { Goals } from "./pages/Goals";
 import "./styles/globals.css";
 
 function App() {
@@ -43,7 +45,8 @@ function App() {
         <main style={{ flex: 1, overflow: 'auto' }}>
           {activePage === "dashboard" && <Dashboard />}
           {activePage === "transactions" && <Transactions />}
-          {/* Other pages can be added here */}
+          {activePage === "budgets" && <Budgets />}
+          {activePage === "goals" && <Goals />}
         </main>
       </div>
     </div>
