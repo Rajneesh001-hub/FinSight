@@ -21,7 +21,7 @@ export const TopBar = ({ userName = "Arjun Mehta" }) => {
       zIndex: 30
     }}>
       <div style={{
-        padding: '16px 24px',
+        padding: '14px 32px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between'
