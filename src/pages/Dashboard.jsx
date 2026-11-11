@@ -16,18 +16,17 @@ import {
 } from "../data/mockData";
 
 export const Dashboard = () => {
-  const [monthFilter, setMonthFilter] = useState("this-month");
-
   return (
-    <div className="w-full">
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       {/* Page Header */}
       <DashboardHeader />
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto bg-gray-50">
-        <div className="px-6 py-8 max-w-7xl mx-auto space-y-8">
-          {/* Row 1: Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div style={{ flex: 1, overflow: 'auto', backgroundColor: '#F6F7F9', paddingTop: '24px', paddingBottom: '24px' }}>
+        <div style={{ maxWidth: '1280px', marginLeft: 'auto', marginRight: 'auto', paddingLeft: '24px', paddingRight: '24px' }}>
+          
+          {/* Row 1: Summary Cards (4 columns) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginBottom: '24px' }}>
             <SummaryCard
               label={summaryCards.totalBalance.label}
               amount={summaryCards.totalBalance.amount}
@@ -58,8 +57,8 @@ export const Dashboard = () => {
             />
           </div>
 
-          {/* Row 2: Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Row 2: Charts (2 columns - Donut and Bar) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px', marginBottom: '24px' }}>
             <DonutChart data={spendingByCategory.categories} />
             <BarChart
               data={incomeVsExpenses.months}
@@ -68,13 +67,13 @@ export const Dashboard = () => {
             />
           </div>
 
-          {/* Row 3: Budgets and Goals */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Row 3: Budgets and Goals (2 columns) */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '24px', marginBottom: '24px' }}>
             <BudgetSection budgets={monthlyBudgets} />
             <GoalsSection goals={financialGoals} />
           </div>
 
-          {/* Row 4: Recent Transactions */}
+          {/* Row 4: Recent Transactions (Full Width) */}
           <TransactionsTable
             transactions={recentTransactions}
             categories={filterCategories}

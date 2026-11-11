@@ -32,7 +32,18 @@ export const Sidebar = ({ activePage = "dashboard", onPageChange, isMobile, isOp
       {isMobile && (
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="fixed top-4 left-4 z-40 p-2 bg-white rounded-lg shadow-sm"
+          style={{
+            position: 'fixed',
+            top: '16px',
+            left: '16px',
+            zIndex: 40,
+            padding: '8px',
+            backgroundColor: '#ffffff',
+            borderRadius: '8px',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+            border: 'none',
+            cursor: 'pointer'
+          }}
         >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -41,55 +52,110 @@ export const Sidebar = ({ activePage = "dashboard", onPageChange, isMobile, isOp
       {/* Overlay for mobile */}
       {isMobile && isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-20"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            zIndex: 20
+          }}
           onClick={() => setIsOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`
-          ${isMobile ? "fixed left-0 top-0 z-30 h-screen w-64" : "w-64"}
-          bg-white border-r border-gray-200 flex flex-col transition-transform
-          ${isMobile && !isOpen ? "-translate-x-full" : "translate-x-0"}
-        `}
+        style={{
+          position: isMobile ? 'fixed' : 'relative',
+          left: 0,
+          top: 0,
+          zIndex: isMobile ? 30 : 'auto',
+          height: isMobile ? '100vh' : 'auto',
+          width: '256px',
+          backgroundColor: '#ffffff',
+          borderRight: '1px solid #E5E7EB',
+          display: 'flex',
+          flexDirection: 'column',
+          transform: (isMobile && !isOpen) ? 'translateX(-100%)' : 'translateX(0)',
+          transition: 'transform 0.3s ease'
+        }}
       >
         {/* Logo */}
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-teal-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">FS</span>
+        <div style={{
+          padding: '24px',
+          borderBottom: '1px solid #E5E7EB'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              backgroundColor: '#2F6F63',
+              borderRadius: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '18px' }}>FS</span>
             </div>
-            <span className="font-semibold text-lg text-gray-900">FinSight</span>
+            <span style={{ fontWeight: 600, fontSize: '18px', color: '#111827', fontFamily: 'Inter, sans-serif' }}>
+              FinSight
+            </span>
           </div>
         </div>
 
         {/* Section Label */}
-        <div className="px-6 py-4 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+        <div style={{
+          padding: '16px 24px',
+          fontSize: '11px',
+          fontWeight: 600,
+          color: '#6B7280',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          fontFamily: 'Inter, sans-serif'
+        }}>
           Financial Management
         </div>
 
         {/* Menu Items */}
-        <nav className="flex-1 px-4 space-y-2">
+        <nav style={{
+          flex: 1,
+          padding: '0 16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px'
+        }}>
           {menuItems.map(({ id, label, icon: Icon }) => {
             const isActive = activePage === id;
             return (
               <button
                 key={id}
                 onClick={() => handleMenuClick(id)}
-                className={`
-                  w-full px-4 py-3 rounded-lg font-medium text-left flex items-center gap-3
-                  transition-all duration-200
-                  ${
-                    isActive
-                      ? "bg-teal-700 text-white"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }
-                `}
+                style={{
+                  width: '100%',
+                  padding: '10px 16px',
+                  borderRadius: '8px',
+                  fontWeight: 500,
+                  fontSize: '14px',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  backgroundColor: isActive ? '#2F6F63' : 'transparent',
+                  color: isActive ? '#ffffff' : '#374151',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.2s ease',
+                  fontFamily: 'Inter, sans-serif'
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) e.currentTarget.style.backgroundColor = '#F9FAFB';
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) e.currentTarget.style.backgroundColor = 'transparent';
+                }}
               >
                 <Icon
                   size={20}
-                  className={isActive ? "text-mint-200" : "text-gray-600"}
+                  color={isActive ? '#9BE7D3' : '#6B7280'}
                 />
                 <span>{label}</span>
               </button>
@@ -98,29 +164,78 @@ export const Sidebar = ({ activePage = "dashboard", onPageChange, isMobile, isOp
         </nav>
 
         {/* User Profile at Bottom */}
-        <div className="border-t border-gray-200 p-4 space-y-4">
-          <div className="flex items-center gap-3">
-            <img
-              src="https://ui-avatars.com/api/?name=Arjun+Mehta&background=2F6F63&color=fff&size=40"
-              alt="Arjun Mehta"
-              className="w-10 h-10 rounded-lg"
-            />
-            <div className="flex-1 min-w-0">
-              <div className="font-semibold text-sm text-gray-900 truncate">
+        <div style={{
+          borderTop: '1px solid #E5E7EB',
+          padding: '16px'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            marginBottom: '16px'
+          }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              backgroundColor: '#9BE7D3',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: 700,
+              fontSize: '16px',
+              color: '#2F6F63',
+              fontFamily: 'Inter, sans-serif'
+            }}>
+              AM
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{
+                fontWeight: 600,
+                fontSize: '14px',
+                color: '#111827',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                fontFamily: 'Inter, sans-serif'
+              }}>
                 Arjun Mehta
               </div>
-              <div className="text-xs text-gray-500 truncate">
+              <div style={{
+                fontSize: '12px',
+                color: '#6B7280',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                fontFamily: 'Inter, sans-serif'
+              }}>
                 Entrepreneur
               </div>
             </div>
           </div>
 
           <button
-            className="w-full flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              color: '#374151',
+              backgroundColor: 'transparent',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s ease',
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '14px'
+            }}
             title="Logout"
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             <LogOut size={18} />
-            <span className="text-sm">Logout</span>
+            <span>Logout</span>
           </button>
         </div>
       </aside>

@@ -23,7 +23,7 @@ function App() {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div style={{ display: 'flex', height: '100vh', backgroundColor: '#F6F7F9' }}>
       {/* Sidebar */}
       <Sidebar
         activePage={activePage}
@@ -34,12 +34,12 @@ function App() {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Top Bar */}
         <TopBar userName="Arjun Mehta" />
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto">
+        <main style={{ flex: 1, overflow: 'auto' }}>
           {activePage === "dashboard" && <Dashboard />}
           {/* Other pages can be added here */}
         </main>

@@ -13,90 +13,224 @@ export const TopBar = ({ userName = "Arjun Mehta" }) => {
   const [searchFocus, setSearchFocus] = useState(false);
 
   return (
-    <div className="bg-white border-b border-gray-200 sticky top-0 z-30">
-      <div className="px-6 py-4 flex items-center justify-between">
+    <div style={{
+      backgroundColor: '#ffffff',
+      borderBottom: '1px solid #E5E7EB',
+      position: 'sticky',
+      top: 0,
+      zIndex: 30
+    }}>
+      <div style={{
+        padding: '16px 24px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
         {/* Left: Search */}
-        <div className={`flex-1 max-w-md`}>
+        <div style={{ flex: 1, maxWidth: '448px' }}>
           <div
-            className={`
-              flex items-center gap-2 px-4 py-2 rounded-lg border-2 transition-colors
-              ${
-                searchFocus
-                  ? "border-teal-700 bg-white"
-                  : "border-gray-200 bg-gray-50"
-              }
-            `}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              border: searchFocus ? '2px solid #2F6F63' : '2px solid #E5E7EB',
+              backgroundColor: searchFocus ? '#ffffff' : '#F9FAFB',
+              transition: 'all 0.2s ease'
+            }}
           >
             <Search
               size={18}
-              className={searchFocus ? "text-teal-700" : "text-gray-400"}
+              color={searchFocus ? '#2F6F63' : '#9CA3AF'}
             />
             <input
               type="text"
               placeholder="Search transactions, reports..."
               onFocus={() => setSearchFocus(true)}
               onBlur={() => setSearchFocus(false)}
-              className="bg-transparent outline-none flex-1 text-sm text-gray-700 placeholder-gray-400"
+              style={{
+                backgroundColor: 'transparent',
+                outline: 'none',
+                border: 'none',
+                flex: 1,
+                fontSize: '14px',
+                color: '#374151',
+                fontFamily: 'Inter, sans-serif'
+              }}
             />
           </div>
         </div>
 
         {/* Right: Icons and Profile */}
-        <div className="flex items-center gap-6 ml-8">
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '24px',
+          marginLeft: '32px'
+        }}>
           {/* Notification Bell */}
           <button
-            className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            style={{
+              position: 'relative',
+              padding: '8px',
+              color: '#4B5563',
+              backgroundColor: 'transparent',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s ease'
+            }}
             title="Notifications"
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             <Bell size={20} />
-            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+            <span style={{
+              position: 'absolute',
+              top: '4px',
+              right: '4px',
+              width: '8px',
+              height: '8px',
+              backgroundColor: '#EF4444',
+              borderRadius: '50%'
+            }} />
           </button>
 
           {/* Help Icon */}
           <button
-            className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            style={{
+              padding: '8px',
+              color: '#4B5563',
+              backgroundColor: 'transparent',
+              borderRadius: '8px',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'background-color 0.2s ease'
+            }}
             title="Help"
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F3F4F6'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >
             <HelpCircle size={20} />
           </button>
 
           {/* User Profile Dropdown */}
-          <div className="relative">
+          <div style={{ position: 'relative' }}>
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="flex items-center gap-3 px-3 py-1 hover:bg-gray-50 rounded-lg transition-colors"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '4px 12px',
+                backgroundColor: 'transparent',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s ease'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
             >
-              <img
-                src="https://ui-avatars.com/api/?name=Arjun+Mehta&background=2F6F63&color=fff&size=32"
-                alt={userName}
-                className="w-8 h-8 rounded-lg"
-              />
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                backgroundColor: '#9BE7D3',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: '14px',
+                color: '#2F6F63',
+                fontFamily: 'Inter, sans-serif'
+              }}>
+                AM
+              </div>
               <ChevronDown
                 size={16}
-                className={`text-gray-600 transition-transform ${
-                  isProfileOpen ? "rotate-180" : ""
-                }`}
+                color="#4B5563"
+                style={{
+                  transition: 'transform 0.2s ease',
+                  transform: isProfileOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+                }}
               />
             </button>
 
             {/* Dropdown Menu */}
             {isProfileOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-40">
-                <div className="px-4 py-2 border-b border-gray-200">
-                  <div className="font-semibold text-sm text-gray-900">
+              <div style={{
+                position: 'absolute',
+                right: 0,
+                marginTop: '8px',
+                width: '192px',
+                backgroundColor: '#ffffff',
+                borderRadius: '8px',
+                boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)',
+                border: '1px solid #E5E7EB',
+                padding: '8px 0',
+                zIndex: 40
+              }}>
+                <div style={{
+                  padding: '8px 16px',
+                  borderBottom: '1px solid #E5E7EB'
+                }}>
+                  <div style={{
+                    fontWeight: 600,
+                    fontSize: '14px',
+                    color: '#111827',
+                    fontFamily: 'Inter, sans-serif'
+                  }}>
                     {userName}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#6B7280',
+                    fontFamily: 'Inter, sans-serif'
+                  }}>
                     arjun.mehta@fintech.co
                   </div>
                 </div>
 
-                <button className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2">
+                <button style={{
+                  width: '100%',
+                  padding: '8px 16px',
+                  textAlign: 'left',
+                  fontSize: '14px',
+                  color: '#374151',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontFamily: 'Inter, sans-serif'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
                   <SettingsIcon size={16} />
                   Settings
                 </button>
 
-                <button className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                <button style={{
+                  width: '100%',
+                  padding: '8px 16px',
+                  textAlign: 'left',
+                  fontSize: '14px',
+                  color: '#DC2626',
+                  backgroundColor: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontFamily: 'Inter, sans-serif'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEF2F2'}
+                onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
                   <LogOut size={16} />
                   Logout
                 </button>

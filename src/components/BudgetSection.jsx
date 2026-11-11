@@ -1,32 +1,24 @@
 import React from "react";
-import {
-  AlertCircle,
-  TrendingUp,
-  ChevronRight,
-} from "lucide-react";
+import { AlertCircle, ChevronRight } from "lucide-react";
 import { formatIndianCurrency } from "../utils/formatting";
 
-/**
- * Monthly Budgets with progress bars
- * Shows budget status with color indicators (green, amber, red)
- */
 export const BudgetSection = ({ budgets }) => {
   const getProgressColor = (status) => {
     const colors = {
-      ok: "bg-green-500",
-      warning: "bg-amber-500",
-      danger: "bg-red-500",
+      ok: '#10b981',
+      warning: '#f59e0b',
+      danger: '#ef4444',
     };
-    return colors[status] || "bg-gray-300";
+    return colors[status] || '#d1d5db';
   };
 
   const getStatusBadgeColor = (status) => {
     const colors = {
-      ok: "text-green-700 bg-green-50",
-      warning: "text-amber-700 bg-amber-50",
-      danger: "text-red-700 bg-red-50",
+      ok: { bg: '#dcfce7', text: '#16a34a' },
+      warning: { bg: '#fef3c7', text: '#d97706' },
+      danger: { bg: '#fee2e2', text: '#dc2626' },
     };
-    return colors[status] || "text-gray-700 bg-gray-50";
+    return colors[status] || { bg: '#f3f4f6', text: '#6b7280' };
   };
 
   const getStatusLabel = (status) => {
@@ -39,53 +31,107 @@ export const BudgetSection = ({ budgets }) => {
   };
 
   return (
-    <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-      <div className="flex items-center justify-between mb-6">
+    <div style={{
+      backgroundColor: '#FFFFFF',
+      borderRadius: '16px',
+      padding: '24px',
+      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+      border: '1px solid #e5e7eb',
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: '24px',
+      }}>
         <div>
-          <h3 className="text-lg font-bold text-gray-900 mb-1">
+          <h3 style={{
+            fontSize: '16px',
+            fontWeight: 'bold',
+            color: '#1f2937',
+            margin: 0,
+          }}>
             Monthly budgets
           </h3>
-          <p className="text-sm text-gray-500">
+          <p style={{
+            fontSize: '12px',
+            color: '#9ca3af',
+            marginTop: '4px',
+            margin: 0,
+          }}>
             Categorize expenditure caps and utilization
           </p>
         </div>
-        <button className="text-teal-700 hover:text-teal-800 font-medium text-sm flex items-center gap-1">
+        <button style={{
+          color: '#2F6F63',
+          cursor: 'pointer',
+          fontWeight: '600',
+          fontSize: '12px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '4px',
+          backgroundColor: 'transparent',
+          border: 'none',
+          padding: 0,
+        }}>
           Manage budgets
-          <ChevronRight size={16} />
+          <ChevronRight size={14} />
         </button>
       </div>
 
       {/* Budget Items */}
-      <div className="space-y-6">
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {budgets.map((budget) => {
           const percentage = (budget.spent / budget.limit) * 100;
           const remaining = budget.limit - budget.spent;
           const isOverBudget = budget.spent > budget.limit;
+          const colors = getStatusBadgeColor(budget.status);
 
           return (
-            <div key={budget.id} className="space-y-2">
-              {/* Header with name and amount */}
-              <div className="flex items-center justify-between">
-                <h4 className="font-semibold text-gray-900">
+            <div key={budget.id} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              {/* Name and Status */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '8px',
+              }}>
+                <h4 style={{
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  color: '#1f2937',
+                  margin: 0,
+                }}>
                   {budget.name}
                 </h4>
-                <span
-                  className={`text-xs font-semibold px-3 py-1 rounded-full ${getStatusBadgeColor(
-                    budget.status
-                  )}`}
-                >
+                <span style={{
+                  fontSize: '11px',
+                  fontWeight: 'bold',
+                  paddingLeft: '8px',
+                  paddingRight: '8px',
+                  paddingTop: '4px',
+                  paddingBottom: '4px',
+                  borderRadius: '9999px',
+                  backgroundColor: colors.bg,
+                  color: colors.text,
+                }}>
                   {getStatusLabel(budget.status)}
                 </span>
               </div>
 
-              {/* Amount and percentage */}
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">
-                  {formatIndianCurrency(budget.spent)} / {formatIndianCurrency(budget.limit)}
-                </span>
-                <span className={`font-semibold ${
-                  isOverBudget ? "text-red-700" : "text-green-700"
-                }`}>
+              {/* Amount info */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '12px',
+                color: '#6b7280',
+              }}>
+                <span>{formatIndianCurrency(budget.spent)} / {formatIndianCurrency(budget.limit)}</span>
+                <span style={{
+                  fontWeight: '600',
+                  color: isOverBudget ? '#dc2626' : '#16a34a',
+                }}>
                   {isOverBudget
                     ? `+${formatIndianCurrency(budget.spent - budget.limit)} over`
                     : formatIndianCurrency(remaining) + " left"}
@@ -93,20 +139,22 @@ export const BudgetSection = ({ budgets }) => {
               </div>
 
               {/* Progress bar */}
-              <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div style={{
+                width: '100%',
+                backgroundColor: '#e5e7eb',
+                borderRadius: '9999px',
+                height: '6px',
+                overflow: 'hidden',
+              }}>
                 <div
-                  className={`h-full rounded-full transition-all ${getProgressColor(
-                    budget.status
-                  )}`}
-                  style={{ width: `${Math.min(percentage, 100)}%` }}
+                  style={{
+                    height: '100%',
+                    borderRadius: '9999px',
+                    backgroundColor: getProgressColor(budget.status),
+                    width: `${Math.min(percentage, 100)}%`,
+                    transition: 'width 0.3s ease',
+                  }}
                 />
-                {/* Overflow indicator */}
-                {isOverBudget && (
-                  <div
-                    className="h-full bg-red-500 rounded-full"
-                    style={{ width: `${Math.min((percentage - 100) / 2, 30)}%` }}
-                  />
-                )}
               </div>
             </div>
           );
@@ -114,12 +162,29 @@ export const BudgetSection = ({ budgets }) => {
       </div>
 
       {/* Info banner */}
-      <div className="mt-6 pt-6 border-t border-gray-200 flex items-start gap-3 p-4 bg-amber-50 rounded-lg">
-        <AlertCircle size={18} className="text-amber-700 flex-shrink-0 mt-0.5" />
-        <p className="text-sm text-amber-900">
-          <span className="font-semibold">Get positive liquidity alerts</span> sustained across all  
-          4 reporting periods.
-          <span className="font-semibold text-amber-700 ml-1">Avg. Retention: ₹1,27,430/mo</span>
+      <div style={{
+        marginTop: '16px',
+        paddingTop: '16px',
+        borderTop: '1px solid #e5e7eb',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '8px',
+        paddingLeft: '12px',
+        paddingRight: '12px',
+        paddingBottom: '12px',
+        backgroundColor: '#fffbeb',
+        borderRadius: '8px',
+      }}>
+        <AlertCircle size={16} style={{ color: '#d97706', flexShrink: 0, marginTop: '2px' }} />
+        <p style={{
+          fontSize: '12px',
+          color: '#92400e',
+          margin: 0,
+          lineHeight: '1.5',
+        }}>
+          <span style={{ fontWeight: '600' }}>Get positive liquidity alerts</span> sustained across all 4 reporting periods.
+          <br />
+          <span style={{ fontWeight: '600', color: '#d97706' }}>Avg. Retention: ₹1,27,430/mo</span>
         </p>
       </div>
     </div>

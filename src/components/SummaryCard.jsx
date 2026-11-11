@@ -26,59 +26,86 @@ export const SummaryCard = ({
   const Icon = iconMap[icon] || Wallet;
   const isPositive = change >= 0;
 
-  const colorClasses = {
+  const colorConfig = {
     teal: {
-      bg: "bg-teal-50",
-      icon: "text-teal-700",
-      text: "text-teal-700",
+      iconBg: '#f0fdf9',
+      icon: '#2F6F63',
     },
     green: {
-      bg: "bg-green-50",
-      icon: "text-green-700",
-      text: "text-green-700",
+      iconBg: '#dcfce7',
+      icon: '#16a34a',
     },
     red: {
-      bg: "bg-red-50",
-      icon: "text-red-700",
-      text: "text-red-700",
+      iconBg: '#fee2e2',
+      icon: '#dc2626',
     },
   };
 
-  const colors = colorClasses[color] || colorClasses.teal;
+  const colors = colorConfig[color] || colorConfig.teal;
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-      {/* Header with icon and label */}
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <p className="text-gray-600 text-sm font-medium mb-1">{label}</p>
-        </div>
-        <div className={`${colors.bg} p-2 rounded-lg`}>
-          <Icon size={20} className={colors.icon} />
+    <div style={{
+      backgroundColor: '#FFFFFF',
+      borderRadius: '16px',
+      padding: '24px',
+      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+      border: '1px solid #e5e7eb',
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
+      {/* Top row: Label and Icon */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: '16px',
+      }}>
+        <span style={{
+          fontSize: '14px',
+          color: '#6b7280',
+          fontWeight: '500',
+        }}>{label}</span>
+        <div style={{
+          backgroundColor: colors.iconBg,
+          padding: '8px',
+          borderRadius: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+          <Icon size={18} color={colors.icon} />
         </div>
       </div>
 
-      {/* Amount */}
-      <div className="mb-4">
-        <h3 className="text-3xl font-bold text-gray-900">
+      {/* Amount - Large and Bold */}
+      <div style={{
+        marginBottom: '12px',
+      }}>
+        <h3 style={{
+          fontSize: '24px',
+          fontWeight: 'bold',
+          color: '#1f2937',
+          margin: 0,
+        }}>
           {formatIndianCurrency(amount)}
         </h3>
       </div>
 
-      {/* Change percentage */}
-      <div
-        className={`flex items-center gap-2 ${
-          isPositive ? "text-green-700" : "text-red-700"
-        }`}
-      >
+      {/* Change percentage with arrow */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '4px',
+        fontSize: '12px',
+        fontWeight: '600',
+        color: isPositive ? '#16a34a' : '#dc2626',
+      }}>
         {isPositive ? (
-          <ArrowUp size={16} className="flex-shrink-0" />
+          <ArrowUp size={14} />
         ) : (
-          <ArrowDown size={16} className="flex-shrink-0" />
+          <ArrowDown size={14} />
         )}
-        <span className="text-sm font-semibold">
-          {formatPercentage(change)} vs last month
-        </span>
+        <span>{formatPercentage(change)} vs last month</span>
       </div>
     </div>
   );
