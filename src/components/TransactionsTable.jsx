@@ -9,6 +9,9 @@ import {
   Server,
   TrendingUp,
   CheckCircle,
+  ShoppingCart,
+  Home,
+  Cloud,
 } from "lucide-react";
 import { formatIndianCurrency, formatDate } from "../utils/formatting";
 
@@ -18,6 +21,9 @@ const iconMap = {
   "shopping-bag": ShoppingBag,
   server: Server,
   "trending-up": TrendingUp,
+  shopping: ShoppingCart,
+  home: Home,
+  cloud: Cloud,
 };
 
 export const TransactionsTable = ({
@@ -53,160 +59,362 @@ export const TransactionsTable = ({
 
   const getCategoryColor = (category) => {
     const colors = {
-      Income: "bg-green-100 text-green-700",
-      Food: "bg-orange-100 text-orange-700",
-      Rent: "bg-blue-100 text-blue-700",
-      Shopping: "bg-purple-100 text-purple-700",
-      Bills: "bg-red-100 text-red-700",
-      Transport: "bg-yellow-100 text-yellow-700",
-      "Rent & Housing": "bg-blue-100 text-blue-700",
-      "Food & Dining": "bg-orange-100 text-orange-700",
-      "Bills & Utilities": "bg-red-100 text-red-700",
+      Income: { bg: '#D1FAE5', text: '#059669' },
+      Food: { bg: '#FED7AA', text: '#C2410C' },
+      Rent: { bg: '#DBEAFE', text: '#1D4ED8' },
+      Shopping: { bg: '#E9D5FF', text: '#7C3AED' },
+      Bills: { bg: '#FEE2E2', text: '#DC2626' },
+      Transport: { bg: '#FEF3C7', text: '#D97706' },
+      "Rent & Housing": { bg: '#DBEAFE', text: '#1D4ED8' },
+      "Food & Dining": { bg: '#FED7AA', text: '#C2410C' },
+      "Bills & Utilities": { bg: '#FEE2E2', text: '#DC2626' },
     };
-    return colors[category] || "bg-gray-100 text-gray-700";
+    return colors[category] || { bg: '#F3F4F6', text: '#374151' };
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100">
+    <div style={{
+      backgroundColor: '#ffffff',
+      borderRadius: '16px',
+      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+      border: '1px solid #F3F4F6'
+    }}>
       {/* Header */}
-      <div className="px-8 py-6 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-4">
+      <div style={{
+        padding: '24px 32px',
+        borderBottom: '1px solid #E5E7EB'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '16px',
+          flexWrap: 'wrap',
+          gap: '16px'
+        }}>
           <div>
-            <h3 className="text-lg font-bold text-gray-900">
+            <h3 style={{
+              fontSize: '18px',
+              fontWeight: 700,
+              color: '#111827',
+              fontFamily: 'Inter, sans-serif',
+              marginBottom: '4px'
+            }}>
               Recent transactions
             </h3>
-            <p className="text-sm text-gray-500">
-              Showing 8 of 64 entries for October 2026
+            <p style={{
+              fontSize: '14px',
+              color: '#6B7280',
+              fontFamily: 'Inter, sans-serif'
+            }}>
+              (Showing 6 of 84 entries for October 2026)
             </p>
           </div>
-          <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
-            <Download size={16} />
-            CSV
-          </button>
-        </div>
-
-        {/* Search and Filters */}
-        <div className="flex items-center gap-4 flex-wrap">
-          {/* Search box */}
-          <div className="flex-1 min-w-72">
-            <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus-within:border-teal-700 focus-within:bg-white transition-colors">
-              <Search size={16} className="text-gray-400" />
+          <div style={{ display: 'flex', gap: '12px' }}>
+            {/* Search box */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '8px 16px',
+              backgroundColor: '#F9FAFB',
+              border: '1px solid #E5E7EB',
+              borderRadius: '8px',
+              minWidth: '240px'
+            }}>
+              <Search size={16} color="#9CA3AF" />
               <input
                 type="text"
                 placeholder="Search payee, notes..."
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
-                className="bg-transparent outline-none flex-1 text-sm text-gray-700 placeholder-gray-400"
+                style={{
+                  backgroundColor: 'transparent',
+                  outline: 'none',
+                  border: 'none',
+                  flex: 1,
+                  fontSize: '14px',
+                  color: '#374151',
+                  fontFamily: 'Inter, sans-serif'
+                }}
               />
             </div>
-          </div>
 
-          {/* Filter button */}
-          <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
-            <Filter size={16} />
-            Filter
-          </button>
+            {/* Filter button */}
+            <button style={{
+              padding: '8px 16px',
+              border: '1px solid #D1D5DB',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#374151',
+              backgroundColor: '#ffffff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontFamily: 'Inter, sans-serif',
+              transition: 'background-color 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+            >
+              <Filter size={16} />
+              Filter
+            </button>
+
+            {/* CSV button */}
+            <button style={{
+              padding: '8px 16px',
+              border: '1px solid #D1D5DB',
+              borderRadius: '8px',
+              fontSize: '14px',
+              fontWeight: 500,
+              color: '#374151',
+              backgroundColor: '#ffffff',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontFamily: 'Inter, sans-serif',
+              transition: 'background-color 0.2s ease'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#ffffff'}
+            >
+              <Download size={16} />
+              CSV
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Category chips */}
-      <div className="px-8 py-4 border-b border-gray-200 flex items-center gap-2 overflow-x-auto">
-        {categories.map((category) => (
-          <button
-            key={category}
-            onClick={() => setSelectedCategory(category)}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-              selectedCategory === category
-                ? "bg-teal-700 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
-          >
-            {category}
-          </button>
-        ))}
+      <div style={{
+        padding: '16px 32px',
+        borderBottom: '1px solid #E5E7EB',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        overflowX: 'auto'
+      }}>
+        {categories.map((category) => {
+          const isSelected = selectedCategory === category;
+          return (
+            <button
+              key={category}
+              onClick={() => setSelectedCategory(category)}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '9999px',
+                fontSize: '14px',
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
+                backgroundColor: isSelected ? '#2F6F63' : '#F3F4F6',
+                color: isSelected ? '#ffffff' : '#374151',
+                border: 'none',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                fontFamily: 'Inter, sans-serif'
+              }}
+              onMouseEnter={(e) => {
+                if (!isSelected) e.currentTarget.style.backgroundColor = '#E5E7EB';
+              }}
+              onMouseLeave={(e) => {
+                if (!isSelected) e.currentTarget.style.backgroundColor = '#F3F4F6';
+              }}
+            >
+              {category}
+            </button>
+          );
+        })}
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead className="bg-gray-50 border-b border-gray-200">
+      <div style={{ overflowX: 'auto' }}>
+        <table style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          fontFamily: 'Inter, sans-serif'
+        }}>
+          <thead style={{
+            backgroundColor: '#F9FAFB',
+            borderBottom: '1px solid #E5E7EB'
+          }}>
             <tr>
-              <th className="px-8 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              <th style={{
+                padding: '12px 32px',
+                textAlign: 'left',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: '#6B7280',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
                 Date
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              <th style={{
+                padding: '12px 24px',
+                textAlign: 'left',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: '#6B7280',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
                 Description
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              <th style={{
+                padding: '12px 24px',
+                textAlign: 'left',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: '#6B7280',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
                 Category
               </th>
-              <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              <th style={{
+                padding: '12px 24px',
+                textAlign: 'left',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: '#6B7280',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
                 Account
               </th>
-              <th className="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Amount
+              <th style={{
+                padding: '12px 24px',
+                textAlign: 'left',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: '#6B7280',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                Amount (₹)
               </th>
-              <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase tracking-wide">
+              <th style={{
+                padding: '12px 32px',
+                textAlign: 'center',
+                fontSize: '11px',
+                fontWeight: 600,
+                color: '#6B7280',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
                 Status
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody>
             {filteredTransactions.length > 0 ? (
-              filteredTransactions.map((txn) => {
+              filteredTransactions.map((txn, idx) => {
                 const Icon = getTransactionIcon(txn);
                 const isIncome = txn.amount > 0;
+                const categoryColors = getCategoryColor(txn.category);
 
                 return (
                   <tr
                     key={txn.id}
-                    className="hover:bg-gray-50 transition-colors"
+                    style={{
+                      borderBottom: idx < filteredTransactions.length - 1 ? '1px solid #F3F4F6' : 'none',
+                      transition: 'background-color 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <td className="px-8 py-4">
-                      <span className="text-sm font-medium text-gray-900">
-                        {formatDate(txn.date)}
-                      </span>
+                    <td style={{
+                      padding: '16px 32px',
+                      fontSize: '14px',
+                      fontWeight: 500,
+                      color: '#111827'
+                    }}>
+                      {formatDate(txn.date)}
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-start gap-3">
-                        <div className="bg-gray-100 p-2 rounded-lg flex-shrink-0">
-                          <Icon size={16} className="text-gray-600" />
+                    <td style={{ padding: '16px 24px' }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '12px'
+                      }}>
+                        <div style={{
+                          backgroundColor: '#F3F4F6',
+                          padding: '8px',
+                          borderRadius: '8px',
+                          flexShrink: 0
+                        }}>
+                          <Icon size={18} color="#6B7280" />
                         </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-gray-900 text-sm">
+                        <div style={{ minWidth: 0 }}>
+                          <p style={{
+                            fontWeight: 600,
+                            color: '#111827',
+                            fontSize: '14px',
+                            marginBottom: '2px'
+                          }}>
                             {txn.description}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p style={{
+                            fontSize: '13px',
+                            color: '#6B7280'
+                          }}>
                             {txn.details}
                           </p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(
-                          txn.category
-                        )}`}
-                      >
+                    <td style={{ padding: '16px 24px' }}>
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        padding: '4px 12px',
+                        borderRadius: '9999px',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        backgroundColor: categoryColors.bg,
+                        color: categoryColors.text
+                      }}>
                         {txn.category}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm text-gray-900">{txn.account}</p>
+                    <td style={{
+                      padding: '16px 24px',
+                      fontSize: '14px',
+                      color: '#111827'
+                    }}>
+                      {txn.account}
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <span
-                        className={`text-sm font-semibold ${
-                          isIncome ? "text-green-700" : "text-gray-900"
-                        }`}
-                      >
-                        {isIncome ? "+" : ""}
-                        {formatIndianCurrency(txn.amount)}
-                      </span>
+                    <td style={{
+                      padding: '16px 24px',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      color: isIncome ? '#059669' : '#111827'
+                    }}>
+                      {isIncome ? "+" : "-"}
+                      {formatIndianCurrency(Math.abs(txn.amount))}
                     </td>
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex items-center justify-center">
-                        <CheckCircle size={18} className="text-green-500" />
+                    <td style={{
+                      padding: '16px 32px',
+                      textAlign: 'center'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
+                      }}>
+                        <CheckCircle size={18} color="#10B981" />
+                        <span style={{
+                          fontSize: '13px',
+                          color: '#059669',
+                          fontWeight: 500
+                        }}>
+                          Completed
+                        </span>
                       </div>
                     </td>
                   </tr>
@@ -214,8 +422,15 @@ export const TransactionsTable = ({
               })
             ) : (
               <tr>
-                <td colSpan="6" className="px-8 py-12 text-center">
-                  <p className="text-gray-500 text-sm">
+                <td colSpan="6" style={{
+                  padding: '48px 32px',
+                  textAlign: 'center'
+                }}>
+                  <p style={{
+                    color: '#6B7280',
+                    fontSize: '14px',
+                    fontFamily: 'Inter, sans-serif'
+                  }}>
                     No transactions found matching your criteria.
                   </p>
                 </td>
@@ -223,6 +438,71 @@ export const TransactionsTable = ({
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Pagination */}
+      <div style={{
+        padding: '16px 32px',
+        borderTop: '1px solid #E5E7EB',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <p style={{
+          fontSize: '14px',
+          color: '#6B7280',
+          fontFamily: 'Inter, sans-serif'
+        }}>
+          Showing <strong>1 to 6</strong> of <strong>84</strong> entries
+        </p>
+        <div style={{
+          display: 'flex',
+          gap: '8px',
+          alignItems: 'center'
+        }}>
+          <button style={{
+            padding: '6px 12px',
+            fontSize: '14px',
+            color: '#9CA3AF',
+            backgroundColor: 'transparent',
+            border: 'none',
+            cursor: 'not-allowed',
+            fontFamily: 'Inter, sans-serif'
+          }}>
+            Previous
+          </button>
+          {[1, 2, 3, '...', 14].map((page, idx) => (
+            <button
+              key={idx}
+              style={{
+                padding: '6px 12px',
+                fontSize: '14px',
+                fontWeight: 500,
+                color: page === 1 ? '#ffffff' : '#374151',
+                backgroundColor: page === 1 ? '#2F6F63' : 'transparent',
+                border: 'none',
+                borderRadius: '6px',
+                cursor: page === '...' ? 'default' : 'pointer',
+                fontFamily: 'Inter, sans-serif',
+                minWidth: '36px'
+              }}
+              disabled={page === '...'}
+            >
+              {page}
+            </button>
+          ))}
+          <button style={{
+            padding: '6px 12px',
+            fontSize: '14px',
+            color: '#374151',
+            backgroundColor: 'transparent',
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: 'Inter, sans-serif'
+          }}>
+            Next →
+          </button>
+        </div>
       </div>
     </div>
   );
