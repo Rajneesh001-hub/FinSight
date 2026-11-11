@@ -5,6 +5,8 @@ import { Dashboard } from "./pages/Dashboard";
 import { Transactions } from "./pages/Transactions";
 import { Budgets } from "./pages/Budgets";
 import { Goals } from "./pages/Goals";
+import { ImportExport } from "./pages/ImportExport";
+import { Settings } from "./pages/Settings";
 import "./styles/globals.css";
 
 function App() {
@@ -47,6 +49,8 @@ function App() {
           {activePage === "transactions" && <Transactions />}
           {activePage === "budgets" && <Budgets />}
           {activePage === "goals" && <Goals />}
+          {activePage === "import-export" && <ImportExport />}
+          {activePage === "settings" && <Settings />}
         </main>
       </div>
     </div>
