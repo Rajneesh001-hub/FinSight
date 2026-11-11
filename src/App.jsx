@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Sidebar } from "./components/Sidebar";
 import { TopBar } from "./components/TopBar";
 import { Dashboard } from "./pages/Dashboard";
+import { Transactions } from "./pages/Transactions";
 import "./styles/globals.css";
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
         {/* Page Content */}
         <main style={{ flex: 1, overflow: 'auto' }}>
           {activePage === "dashboard" && <Dashboard />}
+          {activePage === "transactions" && <Transactions />}
           {/* Other pages can be added here */}
         </main>
       </div>
