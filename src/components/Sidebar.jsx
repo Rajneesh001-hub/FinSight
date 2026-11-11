@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 
-export const Sidebar = ({ activePage = "dashboard", onPageChange, isMobile, isOpen, setIsOpen }) => {
+export const Sidebar = ({ activePage = "dashboard", onPageChange, isMobile, isOpen, setIsOpen, onLogout }) => {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "transactions", label: "Transactions", icon: CreditCard },
@@ -231,6 +231,7 @@ export const Sidebar = ({ activePage = "dashboard", onPageChange, isMobile, isOp
               fontSize: '14px'
             }}
             title="Logout"
+            onClick={onLogout}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
           >

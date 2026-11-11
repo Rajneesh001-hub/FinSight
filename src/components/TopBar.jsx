@@ -8,7 +8,7 @@ import {
   Settings as SettingsIcon,
 } from "lucide-react";
 
-export const TopBar = ({ userName = "Arjun Mehta" }) => {
+export const TopBar = ({ userName = "Arjun Mehta", onLogout }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [searchFocus, setSearchFocus] = useState(false);
 
@@ -228,6 +228,7 @@ export const TopBar = ({ userName = "Arjun Mehta" }) => {
                   gap: '8px',
                   fontFamily: 'Inter, sans-serif'
                 }}
+                onClick={onLogout}
                 onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEF2F2'}
                 onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
