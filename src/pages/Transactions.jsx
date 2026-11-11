@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { formatIndianCurrency } from "../utils/formatting";
 import { transactionsMock } from "../data/mockData";
+import { AddTransactionModal } from "../components/AddTransactionModal";
 
 const iconMap = {
   briefcase: Briefcase,
@@ -44,6 +45,7 @@ const iconMap = {
 };
 
 export const Transactions = () => {
+  const [transactions, setTransactions] = useState(transactionsMock);
   const [selectedRows, setSelectedRows] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [dateRange, setDateRange] = useState("Oct 1, 2026 - Oct 31, 2026");
@@ -53,12 +55,15 @@ export const Transactions = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [currentPage, setCurrentPage] = useState(1);
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Get all transactions
-  const allTransactions = transactionsMock;
+  // Handle saving new transaction
+  const handleSaveTransaction = (newTransaction) => {
+    setTransactions([newTransaction, ...transactions]);
+  };
 
   // Filter transactions
-  const filteredTransactions = allTransactions.filter((txn) => {
+  const filteredTransactions = transactions.filter((txn) => {
     const searchMatch =
       searchText === "" ||
       txn.description.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -229,7 +234,9 @@ export const Transactions = () => {
             Export
           </button>
 
-          <button style={{
+          <button
+            onClick={() => setIsModalOpen(true)}
+            style={{
             padding: "10px 20px",
             backgroundColor: "#2F6F63",
             border: "none",
@@ -1097,6 +1104,13 @@ export const Transactions = () => {
           </div>
         </div>
       </div>
+
+      {/* Add Transaction Modal */}
+      <AddTransactionModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSaveTransaction}
+      />
     </div>
   );
 };
