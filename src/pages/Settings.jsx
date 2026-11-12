@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   User, Tag, Building2, Shield, Sliders,
   Upload, Edit2, Trash2, Plus, Eye, EyeOff,
@@ -6,6 +6,7 @@ import {
   Smartphone, Globe, Bell, Moon, Sun, Monitor,
   CreditCard, LogOut, Lock, RefreshCw, Zap,
 } from "lucide-react";
+import { supabase } from "../utils/supabaseClient";
 
 // ─── data ─────────────────────────────────────────────────────────────────────
 const categoryList = [
@@ -114,10 +115,74 @@ const Divider = () => <div style={{ height:"1px", backgroundColor:"#F3F4F6", mar
 
 /* PROFILE */
 const ProfilePanel = () => {
-  const [name, setName]   = useState("Arjun Mehta");
-  const [email]           = useState("arjun.mehta@fintech.co");
+  const [name, setName]   = useState("");
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("+91 98101 48021");
   const [title, setTitle] = useState("Founder & Principal Consultant, FinEdge Adv…");
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        // Get current user
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (!authUser) return;
+
+        setUser(authUser);
+        setEmail(authUser.email || "");
+
+        // Get profile from database
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", authUser.id)
+          .single();
+
+        if (profile) {
+          setName(profile.full_name || authUser.email?.split("@")[0] || "");
+        } else {
+          setName(authUser.email?.split("@")[0] || "");
+        }
+      } catch (err) {
+        console.error("Error loading profile:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, []);
+
+  const handleSaveProfile = async () => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          full_name: name,
+          email: email,
+        })
+        .eq("id", user.id);
+
+      if (error) throw error;
+      alert("Profile saved successfully!");
+    } catch (err) {
+      alert("Error saving profile: " + err.message);
+    }
+  };
+
+  if (loading) {
+    return <div style={{ padding: "20px" }}>Loading profile...</div>;
+  }
+
+  const initials = name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2) || "U";
 
   return (
     <div>
@@ -137,7 +202,7 @@ const ProfilePanel = () => {
             backgroundColor:"#9BE7D3",
             display:"flex", alignItems:"center", justifyContent:"center",
             fontSize:"24px", fontWeight:700, color:"#2F6F63",
-          }}>AM</div>
+          }}>{initials}</div>
           <div style={{
             position:"absolute", bottom:"0", right:"-4px",
             width:"24px", height:"24px", borderRadius:"50%",
@@ -181,7 +246,7 @@ const ProfilePanel = () => {
       </div>
 
       <div style={{ display:"flex", justifyContent:"flex-end" }}>
-        <BtnPrimary><CheckCircle size={15}/> Save Profile</BtnPrimary>
+        <BtnPrimary onClick={handleSaveProfile}><CheckCircle size={15}/> Save Profile</BtnPrimary>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, ArrowRight, TrendingUp, CheckCircle, Zap } from "lucide-react";
+import { supabase } from "../utils/supabaseClient";
 
 // ─── left panel illustration ──────────────────────────────────────────────────
 const GoalCard = () => (
@@ -118,6 +119,7 @@ export const Register = ({ onRegister, onGoLogin }) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [agreed, setAgreed]       = useState(false);
   const [errors, setErrors]       = useState({});
+  const [loading, setLoading]     = useState(false);
 
   const set = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
@@ -133,10 +135,49 @@ export const Register = ({ onRegister, onGoLogin }) => {
     return e;
   };
 
-  const handleSubmit = (ev) => {
+  const handleSubmit = async (ev) => {
     ev.preventDefault();
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
+
+    setLoading(true);
+    setErrors({});
+
+    // Sign up with Supabase
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email: form.email,
+      password: form.password,
+      options: {
+        data: {
+          full_name: form.name,
+        },
+      },
+    });
+
+    if (signUpError) {
+      setLoading(false);
+      setErrors({ form: signUpError.message });
+      return;
+    }
+
+    // Create user profile in database
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .insert({
+        id: data.user.id,
+        full_name: form.name,
+        email: form.email,
+      });
+
+    setLoading(false);
+
+    if (profileError) {
+      setErrors({ form: profileError.message });
+      return;
+    }
+
+    // Success - store session and navigate
+    localStorage.setItem("session", JSON.stringify(data.session));
     onRegister();
   };
 
@@ -164,6 +205,8 @@ export const Register = ({ onRegister, onGoLogin }) => {
 
             <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#111827", margin: "0 0 6px" }}>Create your account</h2>
             <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 28px" }}>Start tracking your business and personal cash flow</p>
+
+            {errors.form && <p style={{ fontSize: "14px", color: "#DC2626", margin: "0 0 16px", padding: "10px", backgroundColor: "#FEE2E2", borderRadius: "6px" }}>{errors.form}</p>}
 
             <form onSubmit={handleSubmit}>
               {/* name */}
@@ -247,16 +290,16 @@ export const Register = ({ onRegister, onGoLogin }) => {
               {errors.agreed && <p style={{ fontSize: "12px", color: "#DC2626", margin: "-16px 0 16px" }}>{errors.agreed}</p>}
 
               {/* submit */}
-              <button type="submit" style={{
-                width: "100%", padding: "12px", backgroundColor: "#2F6F63", border: "none",
+              <button type="submit" disabled={loading} style={{
+                width: "100%", padding: "12px", backgroundColor: loading ? "#9CA3AF" : "#2F6F63", border: "none",
                 borderRadius: "8px", fontSize: "15px", fontWeight: 600, color: "#fff",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-                cursor: "pointer", marginBottom: "20px", transition: "background .2s",
+                cursor: loading ? "not-allowed" : "pointer", marginBottom: "20px", transition: "background .2s",
               }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = "#275750"}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = "#2F6F63"}
+                onMouseEnter={e => !loading && (e.currentTarget.style.backgroundColor = "#275750")}
+                onMouseLeave={e => !loading && (e.currentTarget.style.backgroundColor = "#2F6F63")}
               >
-                Create Account <ArrowRight size={16}/>
+                {loading ? "Creating account..." : <>Create Account <ArrowRight size={16}/></>}
               </button>
 
               {/* switch to login */}

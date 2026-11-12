@@ -11,7 +11,7 @@ import {
   X,
 } from "lucide-react";
 
-export const Sidebar = ({ activePage = "dashboard", onPageChange, isMobile, isOpen, setIsOpen, onLogout }) => {
+export const Sidebar = ({ activePage = "dashboard", onPageChange, isMobile, isOpen, setIsOpen, onLogout, userName = "User" }) => {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "transactions", label: "Transactions", icon: CreditCard },
@@ -199,7 +199,7 @@ export const Sidebar = ({ activePage = "dashboard", onPageChange, isMobile, isOp
                 whiteSpace: 'nowrap',
                 fontFamily: 'Inter, sans-serif'
               }}>
-                Arjun Mehta
+                {userName}
               </div>
               <div style={{
                 fontSize: '12px',

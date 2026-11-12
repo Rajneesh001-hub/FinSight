@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, ArrowRight, Smartphone, TrendingUp, ShieldCheck, CheckCircle } from "lucide-react";
+import { supabase } from "../utils/supabaseClient";
 
 // ─── mini bar-chart illustration ─────────────────────────────────────────────
 const MiniBarChart = () => {
@@ -110,11 +111,12 @@ const LeftPanel = () => (
 
 // ─── Login Page ───────────────────────────────────────────────────────────────
 export const Login = ({ onLogin, onGoRegister }) => {
-  const [email, setEmail]       = useState("Enter Email");
-  const [password, setPassword] = useState("Password");
+  const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
   const [showPw, setShowPw]     = useState(false);
   const [remember, setRemember] = useState(true);
   const [errors, setErrors]     = useState({});
+  const [loading, setLoading]   = useState(false);
 
   const validate = () => {
     const e = {};
@@ -123,10 +125,28 @@ export const Login = ({ onLogin, onGoRegister }) => {
     return e;
   };
 
-  const handleSubmit = (ev) => {
+  const handleSubmit = async (ev) => {
     ev.preventDefault();
     const e = validate();
     if (Object.keys(e).length) { setErrors(e); return; }
+
+    setLoading(true);
+    setErrors({});
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setLoading(false);
+
+    if (error) {
+      setErrors({ form: error.message });
+      return;
+    }
+
+    // Store session
+    localStorage.setItem("session", JSON.stringify(data.session));
     onLogin();
   };
 
@@ -148,6 +168,8 @@ export const Login = ({ onLogin, onGoRegister }) => {
 
             <h2 style={{ fontSize: "24px", fontWeight: 700, color: "#111827", margin: "0 0 6px" }}>Welcome back</h2>
             <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 28px" }}>Sign in to your FinSight financial console</p>
+
+            {errors.form && <p style={{ fontSize: "14px", color: "#DC2626", margin: "0 0 16px", padding: "10px", backgroundColor: "#FEE2E2", borderRadius: "6px" }}>{errors.form}</p>}
 
             <form onSubmit={handleSubmit}>
               {/* email */}
@@ -216,16 +238,16 @@ export const Login = ({ onLogin, onGoRegister }) => {
               </label>
 
               {/* submit */}
-              <button type="submit" style={{
-                width: "100%", padding: "12px", backgroundColor: "#2F6F63", border: "none",
+              <button type="submit" disabled={loading} style={{
+                width: "100%", padding: "12px", backgroundColor: loading ? "#9CA3AF" : "#2F6F63", border: "none",
                 borderRadius: "8px", fontSize: "15px", fontWeight: 600, color: "#fff",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-                cursor: "pointer", marginBottom: "20px", transition: "background .2s",
+                cursor: loading ? "not-allowed" : "pointer", marginBottom: "20px", transition: "background .2s",
               }}
-                onMouseEnter={e => e.currentTarget.style.backgroundColor = "#275750"}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = "#2F6F63"}
+                onMouseEnter={e => !loading && (e.currentTarget.style.backgroundColor = "#275750")}
+                onMouseLeave={e => !loading && (e.currentTarget.style.backgroundColor = "#2F6F63")}
               >
-                Log in <ArrowRight size={16}/>
+                {loading ? "Logging in..." : <>Log in <ArrowRight size={16}/></>}
               </button>
 
               {/* divider */}
