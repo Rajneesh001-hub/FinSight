@@ -110,8 +110,8 @@ const LeftPanel = () => (
 
 // ─── Login Page ───────────────────────────────────────────────────────────────
 export const Login = ({ onLogin, onGoRegister }) => {
-  const [email, setEmail]       = useState("arjun.mehta@finedge.in");
-  const [password, setPassword] = useState("••••••••••••");
+  const [email, setEmail]       = useState("Enter Email");
+  const [password, setPassword] = useState("Password");
   const [showPw, setShowPw]     = useState(false);
   const [remember, setRemember] = useState(true);
   const [errors, setErrors]     = useState({});
@@ -158,6 +158,7 @@ export const Login = ({ onLogin, onGoRegister }) => {
                 <div style={{ position: "relative" }}>
                   <input
                     type="text" value={email} onChange={e => setEmail(e.target.value)}
+                    placeholder="Enter your Email"
                     style={inputStyle(errors.email)}
                     onFocus={e => e.target.style.borderColor = "#2F6F63"}
                     onBlur={e => e.target.style.borderColor = errors.email ? "#DC2626" : "#E5E7EB"}
@@ -185,6 +186,7 @@ export const Login = ({ onLogin, onGoRegister }) => {
                   <input
                     type={showPw ? "text" : "password"}
                     value={password} onChange={e => setPassword(e.target.value)}
+                    placeholder="Enter your Password"
                     style={inputStyle(errors.password)}
                     onFocus={e => e.target.style.borderColor = "#2F6F63"}
                     onBlur={e => e.target.style.borderColor = errors.password ? "#DC2626" : "#E5E7EB"}

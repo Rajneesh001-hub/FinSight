@@ -169,7 +169,7 @@ export const Register = ({ onRegister, onGoLogin }) => {
               {/* name */}
               <div style={{ marginBottom: "16px" }}>
                 <Label>Full Name</Label>
-                <input value={form.name} onChange={set("name")} placeholder="Arjun Mehta"
+                <input value={form.name} onChange={set("name")} placeholder="Enter your Full Name"
                   style={{ ...inputStyle(errors.name), padding: "11px 14px" }}
                   onFocus={e => e.target.style.borderColor = "#2F6F63"}
                   onBlur={e => e.target.style.borderColor = errors.name ? "#DC2626" : "#E5E7EB"}
@@ -180,7 +180,7 @@ export const Register = ({ onRegister, onGoLogin }) => {
               {/* email */}
               <div style={{ marginBottom: "16px" }}>
                 <Label>Email Address</Label>
-                <input type="email" value={form.email} onChange={set("email")} placeholder="arjun@company.com"
+                <input type="email" value={form.email} onChange={set("email")} placeholder="Enter Your Email"
                   style={{ ...inputStyle(errors.email), padding: "11px 14px" }}
                   onFocus={e => e.target.style.borderColor = "#2F6F63"}
                   onBlur={e => e.target.style.borderColor = errors.email ? "#DC2626" : "#E5E7EB"}
@@ -193,7 +193,7 @@ export const Register = ({ onRegister, onGoLogin }) => {
                 <Label>Password</Label>
                 <div style={{ position: "relative" }}>
                   <input type={showPw ? "text" : "password"} value={form.password} onChange={set("password")}
-                    placeholder="Min. 8 characters"
+                    placeholder="Enter your Password"
                     style={inputStyle(errors.password)}
                     onFocus={e => e.target.style.borderColor = "#2F6F63"}
                     onBlur={e => e.target.style.borderColor = errors.password ? "#DC2626" : "#E5E7EB"}
