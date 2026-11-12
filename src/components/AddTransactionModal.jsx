@@ -6,13 +6,16 @@ import {
   Calendar,
   Building2,
   Tag,
+  AlertCircle,
+  Loader,
 } from "lucide-react";
+import { api } from "../utils/apiClient";
 
 export const AddTransactionModal = ({ isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     type: "Expense",
     amount: "",
-    date: "Oct 26, 2026",
+    date: new Date().toISOString().split('T')[0],
     category: "Food & Dining",
     account: "HDFC Business Bank •• 4092",
     description: "",
@@ -20,6 +23,8 @@ export const AddTransactionModal = ({ isOpen, onClose, onSave }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
 
   const categories = [
     "Food & Dining",
@@ -57,8 +62,9 @@ export const AddTransactionModal = ({ isOpen, onClose, onSave }) => {
     setErrors({ ...errors, amount: error });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setApiError("");
     
     // Validate all fields
     const amountError = validateAmount(formData.amount);
@@ -68,35 +74,46 @@ export const AddTransactionModal = ({ isOpen, onClose, onSave }) => {
       return;
     }
 
-    // Create transaction object
-    const transaction = {
-      id: Date.now(),
-      date: formData.date,
-      description: formData.description || "Untitled Transaction",
-      details: formData.notes || "",
-      category: formData.category,
-      account: formData.account,
-      amount: formData.type === "Income" 
-        ? parseFloat(formData.amount) 
-        : -parseFloat(formData.amount),
-      status: "completed",
-      icon: "briefcase",
-    };
+    if (!formData.description || formData.description.trim() === "") {
+      setErrors({ ...errors, description: "Description is required" });
+      return;
+    }
 
-    onSave(transaction);
-    onClose();
-    
-    // Reset form
-    setFormData({
-      type: "Expense",
-      amount: "",
-      date: "Oct 26, 2026",
-      category: "Food & Dining",
-      account: "HDFC Business Bank •• 4092",
-      description: "",
-      notes: "",
-    });
-    setErrors({});
+    try {
+      setLoading(true);
+      // Create transaction object
+      const transaction = {
+        date: formData.date,
+        description: formData.description,
+        details: formData.notes || "",
+        category: formData.category,
+        account: formData.account,
+        amount: formData.type === "Income" 
+          ? parseFloat(formData.amount) 
+          : -parseFloat(formData.amount),
+      };
+
+      const result = await api.transactions.create(transaction);
+      
+      onSave(result);
+      onClose();
+      
+      // Reset form
+      setFormData({
+        type: "Expense",
+        amount: "",
+        date: new Date().toISOString().split('T')[0],
+        category: "Food & Dining",
+        account: "HDFC Business Bank •• 4092",
+        description: "",
+        notes: "",
+      });
+      setErrors({});
+    } catch (err) {
+      setApiError(err.message || "Failed to save transaction. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCancel = () => {
@@ -561,11 +578,46 @@ export const AddTransactionModal = ({ isOpen, onClose, onSave }) => {
               />
             </div>
 
+            {apiError && (
+              <div style={{
+                backgroundColor: "#FEE2E2",
+                color: "#DC2626",
+                padding: "12px",
+                borderRadius: "8px",
+                fontSize: "13px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}>
+                <AlertCircle size={16} />
+                {apiError}
+              </div>
+            )}
+
+            {errors.description && (
+              <div style={{
+                backgroundColor: "#FEE2E2",
+                color: "#DC2626",
+                padding: "12px",
+                borderRadius: "8px",
+                fontSize: "13px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}>
+                <AlertCircle size={16} />
+                {errors.description}
+              </div>
+            )}
+
             {/* Buttons */}
             <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
               <button
                 type="button"
                 onClick={handleCancel}
+                disabled={loading}
                 style={{
                   padding: "12px 24px",
                   fontSize: "14px",
@@ -574,31 +626,39 @@ export const AddTransactionModal = ({ isOpen, onClose, onSave }) => {
                   backgroundColor: "#ffffff",
                   border: "1px solid #D1D5DB",
                   borderRadius: "8px",
-                  cursor: "pointer",
+                  cursor: loading ? "not-allowed" : "pointer",
                   transition: "all 0.2s ease",
+                  opacity: loading ? 0.6 : 1,
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F9FAFB")}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#ffffff")}
+                onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = "#F9FAFB")}
+                onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = "#ffffff")}
               >
                 Cancel
               </button>
               <button
                 type="submit"
+                disabled={loading}
                 style={{
                   padding: "12px 24px",
                   fontSize: "14px",
                   fontWeight: 500,
                   color: "#ffffff",
-                  backgroundColor: "#2F6F63",
+                  backgroundColor: loading ? "#9BE7D3" : "#2F6F63",
                   border: "none",
                   borderRadius: "8px",
-                  cursor: "pointer",
+                  cursor: loading ? "not-allowed" : "pointer",
                   transition: "all 0.2s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  opacity: loading ? 0.7 : 1,
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#275750")}
-                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#2F6F63")}
+                onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = "#275750")}
+                onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = "#2F6F63")}
               >
-                Save transaction
+                {loading && <Loader size={16} style={{ animation: "spin 1s linear infinite" }} />}
+                {loading ? "Saving..." : "Save transaction"}
               </button>
             </div>
           </form>

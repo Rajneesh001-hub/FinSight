@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Plus,
   Edit2,
@@ -16,7 +16,9 @@ import {
   SlidersHorizontal,
   ChevronDown,
   ArrowUpRight,
+  AlertCircle,
 } from "lucide-react";
+import { api } from "../utils/apiClient";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const fmt = (n) => {
@@ -360,11 +362,239 @@ const SummaryCard = ({ label, value, sub, subColor, icon: Icon, iconBg, iconColo
   </div>
 );
 
+// ─── New Goal Modal ───────────────────────────────────────────────────────────
+const NewGoalModal = ({ isOpen, onClose, onSave }) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    target: "",
+    deadline: "",
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!formData.name || !formData.target || !formData.deadline) {
+      setError("All fields are required");
+      return;
+    }
+
+    const target = parseFloat(formData.target);
+    if (isNaN(target) || target <= 0) {
+      setError("Target amount must be greater than 0");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const newGoal = await api.goals.create({
+        name: formData.name,
+        targetAmount: target,
+        deadline: formData.deadline,
+        currentAmount: 0,
+      });
+      onSave(newGoal);
+      onClose();
+      setFormData({ name: "", target: "", deadline: "" });
+    } catch (err) {
+      setError(err.message || "Failed to create goal");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          zIndex: 50,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: "16px",
+            width: "90%",
+            maxWidth: "500px",
+            padding: "24px",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+            fontFamily: "Inter, sans-serif",
+          }}
+        >
+          <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#111827", margin: "0 0 16px" }}>
+            Create New Goal
+          </h2>
+
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Goal Name *
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="e.g., Emergency Fund, Vacation"
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Target Amount (₹) *
+              </label>
+              <input
+                type="number"
+                value={formData.target}
+                onChange={(e) => setFormData({ ...formData, target: e.target.value })}
+                placeholder="0"
+                step="1000"
+                min="0"
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Deadline *
+              </label>
+              <input
+                type="date"
+                value={formData.deadline}
+                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            {error && (
+              <div style={{
+                backgroundColor: "#FEE2E2",
+                color: "#DC2626",
+                padding: "12px",
+                borderRadius: "8px",
+                fontSize: "13px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}>
+                <AlertCircle size={16} />
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#374151",
+                  backgroundColor: "#fff",
+                  border: "1px solid #D1D5DB",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#fff",
+                  backgroundColor: loading ? "#9BE7D3" : "#2F6F63",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.7 : 1,
+                }}
+              >
+                {loading ? "Creating..." : "Create Goal"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+};
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export const Goals = () => {
-  const totalSaved  = goals.reduce((s, g) => s + g.saved, 0);
-  const totalTarget = goals.reduce((s, g) => s + g.target, 0);
-  const completed   = goals.filter(g => g.status === "completed").length;
+  const [goalsData, setGoalsData] = useState(goals);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    loadGoals();
+  }, []);
+
+  const loadGoals = async () => {
+    try {
+      setLoading(true);
+      const data = await api.goals.list();
+      if (Array.isArray(data)) {
+        setGoalsData(data);
+      }
+    } catch (err) {
+      console.error("Failed to load goals:", err);
+      setError("Failed to load goals. Using demo data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNewGoal = (newGoal) => {
+    setGoalsData([newGoal, ...goalsData]);
+    setIsModalOpen(false);
+  };
+
+  const totalSaved  = goalsData.reduce((s, g) => s + (g.saved || 0), 0);
+  const totalTarget = goalsData.reduce((s, g) => s + (g.target || 0), 0);
+  const completed   = goalsData.filter(g => g.status === "completed").length;
 
   return (
     <div style={{
@@ -414,7 +644,9 @@ export const Goals = () => {
             <ChevronDown size={14} />
           </button>
           {/* new goal */}
-          <button style={{
+          <button
+            onClick={() => setIsModalOpen(true)}
+            style={{
             padding: "9px 18px", borderRadius: "8px",
             backgroundColor: "#2F6F63", border: "none",
             fontSize: "14px", fontWeight: 500, color: "#fff",
@@ -449,7 +681,7 @@ export const Goals = () => {
         />
         <SummaryCard
           label="Goals Completed"
-          value={`${completed} of ${goals.length}`}
+          value={`${completed} of ${goalsData.length}`}
           sub={<><span style={{ color: "#059669", fontWeight: 600 }}>✓ 25% overall</span> · 1 goal fully funded</>}
           icon={Trophy}
           iconBg="#D1FAE5"
@@ -458,9 +690,17 @@ export const Goals = () => {
       </div>
 
       {/* ── Goal cards grid ─────────────────────────────────────────────────── */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
-        {goals.map(g => <GoalCard key={g.id} goal={g} />)}
-      </div>
+      {loading ? (
+        <div style={{ textAlign: "center", padding: "40px", color: "#6B7280" }}>Loading goals...</div>
+      ) : error ? (
+        <div style={{ textAlign: "center", padding: "40px", color: "#DC2626", fontSize: "14px" }}>
+          {error}
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
+          {goalsData.map(g => <GoalCard key={g.id} goal={g} />)}
+        </div>
+      )}
 
       {/* ── Upcoming milestone banner ─────────────────────────────────────── */}
       <div style={{
@@ -526,6 +766,8 @@ export const Goals = () => {
           </button>
         </div>
       </div>
+
+      <NewGoalModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleNewGoal} />
     </div>
   );
 };

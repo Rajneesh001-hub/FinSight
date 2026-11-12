@@ -18,7 +18,10 @@ import {
   Braces,
   History,
   Eye,
+  AlertCircle,
+  Loader,
 } from "lucide-react";
+import { api } from "../utils/apiClient";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const fmt = (n) => {
@@ -150,9 +153,109 @@ export const ImportExport = () => {
   const [exportFormat, setExportFormat] = useState("CSV");
   const [dateRange, setDateRange] = useState("Current Financial Year (FY 202...)");
   const [account, setAccount] = useState("All Accounts (HDFC, ICICI, Ame...)");
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const handleFileSelect = async (file) => {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      setLoading(true);
+      const result = await api.import.csv(formData);
+      if (result.success || result.imported) {
+        setSuccessMessage(`Successfully imported ${result.imported || result.count || 0} transactions`);
+        setTimeout(() => setSuccessMessage(""), 3000);
+      }
+    } catch (err) {
+      setErrorMessage(err.message || "Failed to import file");
+      setTimeout(() => setErrorMessage(""), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      setLoading(true);
+      await api.export.csv();
+      setSuccessMessage("Export started successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (err) {
+      setErrorMessage(err.message || "Failed to export data");
+      setTimeout(() => setErrorMessage(""), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div style={{ padding: "32px", backgroundColor: "#F6F7F9", minHeight: "100vh", fontFamily: "Inter, sans-serif" }}>
+
+      {/* Success/Error Messages */}
+      {successMessage && (
+        <div style={{
+          position: "fixed",
+          top: "20px",
+          right: "20px",
+          backgroundColor: "#D1FAE5",
+          color: "#059669",
+          padding: "16px 20px",
+          borderRadius: "8px",
+          border: "1px solid #A7F3D0",
+          fontSize: "14px",
+          fontWeight: 500,
+          zIndex: 1000,
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+          animation: "slideIn 0.3s ease-out",
+        }}>
+          {successMessage}
+        </div>
+      )}
+
+      {errorMessage && (
+        <div style={{
+          position: "fixed",
+          top: "20px",
+          right: "20px",
+          backgroundColor: "#FEE2E2",
+          color: "#DC2626",
+          padding: "16px 20px",
+          borderRadius: "8px",
+          border: "1px solid #FECACA",
+          fontSize: "14px",
+          fontWeight: 500,
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+          animation: "slideIn 0.3s ease-out",
+        }}>
+          <AlertCircle size={16} />
+          {errorMessage}
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideIn {
+          from {
+            transform: translateX(400px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
 
       {/* breadcrumb */}
       <div style={{ fontSize: "12px", color: "#6B7280", marginBottom: "6px", display: "flex", gap: "6px" }}>
@@ -230,7 +333,12 @@ export const ImportExport = () => {
             <div
               onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
               onDragLeave={() => setIsDragging(false)}
-              onDrop={e => { e.preventDefault(); setIsDragging(false); }}
+              onDrop={e => {
+                e.preventDefault();
+                setIsDragging(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) handleFileSelect(file);
+              }}
               style={{
                 border: `2px dashed ${isDragging ? "#2F6F63" : "#D1D5DB"}`,
                 borderRadius: "12px",
@@ -252,14 +360,25 @@ export const ImportExport = () => {
                 currency values, and checks for transaction hash collisions.
               </p>
               <div style={{ display: "flex", justifyContent: "center", gap: "12px", flexWrap: "wrap" }}>
-                <button style={{
+                <label style={{
                   padding: "10px 20px", borderRadius: "8px",
                   border: "1px solid #D1D5DB", backgroundColor: "#fff",
                   fontSize: "14px", fontWeight: 500, color: "#374151",
-                  display: "flex", alignItems: "center", gap: "7px", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: "7px", cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.6 : 1,
                 }}>
                   <FileText size={15} /> Choose file
-                </button>
+                  <input
+                    type="file"
+                    accept=".csv,.xlsx,.xls"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFileSelect(file);
+                    }}
+                    disabled={loading}
+                    style={{ display: "none" }}
+                  />
+                </label>
                 <button style={{
                   padding: "10px 20px", borderRadius: "8px",
                   border: "1px solid #D1D5DB", backgroundColor: "#fff",
@@ -514,17 +633,22 @@ export const ImportExport = () => {
             </div>
 
             {/* export button */}
-            <button style={{
+            <button
+              onClick={handleExport}
+              disabled={loading}
+              style={{
               width: "100%", padding: "11px",
-              backgroundColor: "#2F6F63", border: "none", borderRadius: "8px",
+              backgroundColor: loading ? "#9BE7D3" : "#2F6F63", border: "none", borderRadius: "8px",
               fontSize: "14px", fontWeight: 600, color: "#fff",
               display: "flex", alignItems: "center", justifyContent: "center",
-              gap: "7px", cursor: "pointer", marginBottom: "10px",
+              gap: "7px", cursor: loading ? "not-allowed" : "pointer", marginBottom: "10px",
+              opacity: loading ? 0.7 : 1,
             }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = "#275750"}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = "#2F6F63"}
+              onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = "#275750")}
+              onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = "#2F6F63")}
             >
-              <Download size={16} /> Export data
+              {loading && <Loader size={16} style={{ animation: "spin 1s linear infinite" }} />}
+              <Download size={16} /> {loading ? "Exporting..." : "Export data"}
             </button>
             <p style={{ fontSize: "11px", color: "#9CA3AF", textAlign: "center", margin: 0 }}>
               Includes all categorised expenses, tax tags, and receipt notes.

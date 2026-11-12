@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Upload,
   Download,
@@ -25,10 +25,13 @@ import {
   Utensils,
   Coffee,
   Car,
+  AlertCircle,
+  Loader,
 } from "lucide-react";
 import { formatIndianCurrency } from "../utils/formatting";
 import { transactionsMock } from "../data/mockData";
 import { AddTransactionModal } from "../components/AddTransactionModal";
+import { api } from "../utils/apiClient";
 
 const iconMap = {
   briefcase: Briefcase,
@@ -56,10 +59,95 @@ export const Transactions = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  useEffect(() => {
+    loadTransactions();
+  }, []);
+
+  const loadTransactions = async () => {
+    try {
+      setLoading(true);
+      const data = await api.transactions.list({ limit: 100 });
+      if (Array.isArray(data)) {
+        setTransactions(data);
+      }
+    } catch (err) {
+      console.error("Failed to load transactions:", err);
+      // Keep mock data on failure
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Handle saving new transaction
   const handleSaveTransaction = (newTransaction) => {
     setTransactions([newTransaction, ...transactions]);
+    setSuccessMessage("Transaction added successfully!");
+    setTimeout(() => setSuccessMessage(""), 3000);
+  };
+
+  // Handle delete
+  const handleDeleteTransaction = async (id) => {
+    try {
+      setLoading(true);
+      await api.transactions.delete(id);
+      setTransactions(transactions.filter(t => t.id !== id));
+      setDeleteConfirm(null);
+      setSuccessMessage("Transaction deleted successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (err) {
+      setErrorMessage(err.message || "Failed to delete transaction");
+      setTimeout(() => setErrorMessage(""), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle export
+  const handleExport = async () => {
+    try {
+      setLoading(true);
+      await api.export.csv();
+      setSuccessMessage("Export started successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000);
+    } catch (err) {
+      setErrorMessage(err.message || "Failed to export data");
+      setTimeout(() => setErrorMessage(""), 3000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle import
+  const handleImport = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const doImport = async () => {
+      try {
+        setLoading(true);
+        const result = await api.import.csv(formData);
+        if (result.success || result.imported) {
+          setSuccessMessage(`Successfully imported ${result.imported || result.count || 0} transactions`);
+          loadTransactions();
+          setTimeout(() => setSuccessMessage(""), 3000);
+        }
+      } catch (err) {
+        setErrorMessage(err.message || "Failed to import data");
+        setTimeout(() => setErrorMessage(""), 3000);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    doImport();
   };
 
   // Filter transactions
@@ -151,6 +239,67 @@ export const Transactions = () => {
       minHeight: "100vh",
       fontFamily: "Inter, sans-serif",
     }}>
+      {/* Success/Error Messages */}
+      {successMessage && (
+        <div style={{
+          position: "fixed",
+          top: "20px",
+          right: "20px",
+          backgroundColor: "#D1FAE5",
+          color: "#059669",
+          padding: "16px 20px",
+          borderRadius: "8px",
+          border: "1px solid #A7F3D0",
+          fontSize: "14px",
+          fontWeight: 500,
+          zIndex: 1000,
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+          animation: "slideIn 0.3s ease-out",
+        }}>
+          {successMessage}
+        </div>
+      )}
+
+      {errorMessage && (
+        <div style={{
+          position: "fixed",
+          top: "20px",
+          right: "20px",
+          backgroundColor: "#FEE2E2",
+          color: "#DC2626",
+          padding: "16px 20px",
+          borderRadius: "8px",
+          border: "1px solid #FECACA",
+          fontSize: "14px",
+          fontWeight: 500,
+          zIndex: 1000,
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+          animation: "slideIn 0.3s ease-out",
+        }}>
+          <AlertCircle size={16} />
+          {errorMessage}
+        </div>
+      )}
+
+      <style>{`
+        @keyframes slideIn {
+          from {
+            transform: translateX(400px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
       {/* Breadcrumb */}
       <div style={{
         fontSize: "13px",
@@ -192,7 +341,7 @@ export const Transactions = () => {
         </div>
 
         <div style={{ display: "flex", gap: "12px" }}>
-          <button style={{
+          <label style={{
             padding: "10px 20px",
             backgroundColor: "#ffffff",
             border: "1px solid #D1D5DB",
@@ -200,20 +349,31 @@ export const Transactions = () => {
             fontSize: "14px",
             fontWeight: 500,
             color: "#374151",
-            cursor: "pointer",
+            cursor: loading ? "not-allowed" : "pointer",
             display: "flex",
             alignItems: "center",
             gap: "8px",
             transition: "all 0.2s ease",
+            opacity: loading ? 0.6 : 1,
           }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#F9FAFB"}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#ffffff"}
+          onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = "#F9FAFB")}
+          onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = "#ffffff")}
           >
             <Upload size={16} />
             Import
-          </button>
+            <input
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              onChange={handleImport}
+              disabled={loading}
+              style={{ display: "none" }}
+            />
+          </label>
 
-          <button style={{
+          <button
+            onClick={handleExport}
+            disabled={loading}
+            style={{
             padding: "10px 20px",
             backgroundColor: "#ffffff",
             border: "1px solid #D1D5DB",
@@ -221,15 +381,17 @@ export const Transactions = () => {
             fontSize: "14px",
             fontWeight: 500,
             color: "#374151",
-            cursor: "pointer",
+            cursor: loading ? "not-allowed" : "pointer",
             display: "flex",
             alignItems: "center",
             gap: "8px",
             transition: "all 0.2s ease",
+            opacity: loading ? 0.6 : 1,
           }}
-          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#F9FAFB"}
-          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "#ffffff"}
+          onMouseEnter={(e) => !loading && (e.currentTarget.style.backgroundColor = "#F9FAFB")}
+          onMouseLeave={(e) => !loading && (e.currentTarget.style.backgroundColor = "#ffffff")}
           >
+            {loading && <Loader size={16} style={{ animation: "spin 1s linear infinite" }} />}
             <Download size={16} />
             Export
           </button>
@@ -966,6 +1128,10 @@ export const Transactions = () => {
                             alignItems: "center",
                             gap: "8px",
                           }}
+                          onClick={() => {
+                            setDeleteConfirm(txn.id);
+                            setOpenMenuId(null);
+                          }}
                           onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#FEF2F2"}
                           onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
                           >
@@ -1111,6 +1277,73 @@ export const Transactions = () => {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveTransaction}
       />
+
+      {/* Delete Confirmation Dialog */}
+      {deleteConfirm && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          zIndex: 100,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}>
+          <div style={{
+            backgroundColor: "#fff",
+            borderRadius: "12px",
+            padding: "24px",
+            maxWidth: "400px",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+          }}>
+            <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#111827", margin: "0 0 8px" }}>
+              Delete Transaction
+            </h3>
+            <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 20px" }}>
+              Are you sure you want to delete this transaction? This action cannot be undone.
+            </p>
+            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={loading}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#374151",
+                  backgroundColor: "#fff",
+                  border: "1px solid #D1D5DB",
+                  borderRadius: "8px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteTransaction(deleteConfirm)}
+                disabled={loading}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#fff",
+                  backgroundColor: loading ? "#F87171" : "#DC2626",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                }}
+              >
+                {loading && <Loader size={14} style={{ animation: "spin 1s linear infinite" }} />}
+                {loading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

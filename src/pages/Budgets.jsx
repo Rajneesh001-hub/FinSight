@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Calendar,
   Plus,
@@ -15,7 +15,9 @@ import {
   Sparkles,
   ChevronDown,
   ArrowRight,
+  AlertCircle,
 } from "lucide-react";
+import { api } from "../utils/apiClient";
 
 // ─── data ────────────────────────────────────────────────────────────────────
 const budgetData = {
@@ -285,12 +287,233 @@ const InsightCard = ({ ins }) => {
   );
 };
 
+// ─── New Budget Modal ─────────────────────────────────────────────────────────
+const NewBudgetModal = ({ isOpen, onClose, onSave }) => {
+  const [formData, setFormData] = useState({
+    category: "Food & Groceries",
+    limit: "",
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const categories = [
+    "Food & Groceries",
+    "Shopping & Lifestyle",
+    "Transportation & Fuel",
+    "Utilities & Subscriptions",
+    "Office & Workspace",
+    "Health & Personal Care",
+  ];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!formData.category || !formData.limit) {
+      setError("All fields are required");
+      return;
+    }
+
+    const limit = parseFloat(formData.limit);
+    if (isNaN(limit) || limit <= 0) {
+      setError("Budget limit must be greater than 0");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const newBudget = await api.budgets.create({
+        category: formData.category,
+        limit: limit,
+      });
+      onSave(newBudget);
+      onClose();
+      setFormData({ category: "Food & Groceries", limit: "" });
+    } catch (err) {
+      setError(err.message || "Failed to create budget");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          zIndex: 50,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: "16px",
+            width: "90%",
+            maxWidth: "500px",
+            padding: "24px",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+            fontFamily: "Inter, sans-serif",
+          }}
+        >
+          <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#111827", margin: "0 0 16px" }}>
+            Create New Budget
+          </h2>
+
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Category *
+              </label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  cursor: "pointer",
+                }}
+              >
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Monthly Limit (₹) *
+              </label>
+              <input
+                type="number"
+                value={formData.limit}
+                onChange={(e) => setFormData({ ...formData, limit: e.target.value })}
+                placeholder="0"
+                step="1000"
+                min="0"
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            {error && (
+              <div style={{
+                backgroundColor: "#FEE2E2",
+                color: "#DC2626",
+                padding: "12px",
+                borderRadius: "8px",
+                fontSize: "13px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}>
+                <AlertCircle size={16} />
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                onClick={onClose}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#374151",
+                  backgroundColor: "#fff",
+                  border: "1px solid #D1D5DB",
+                  borderRadius: "8px",
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#fff",
+                  backgroundColor: loading ? "#9BE7D3" : "#2F6F63",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.7 : 1,
+                }}
+              >
+                {loading ? "Creating..." : "Create Budget"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+};
+
 // ─── main page ────────────────────────────────────────────────────────────────
 export const Budgets = () => {
   const [month, setMonth] = useState("October 2026");
-  const { totalBudget, totalSpent, daysRemaining, categories } = budgetData;
+  const [budgetsData, setBudgetsData] = useState(budgetData);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const { totalBudget, totalSpent, daysRemaining, categories } = budgetsData;
   const remaining = totalBudget - totalSpent;
   const usedPct = pct(totalSpent, totalBudget);
+
+  useEffect(() => {
+    loadBudgets();
+  }, []);
+
+  const loadBudgets = async () => {
+    try {
+      setLoading(true);
+      const data = await api.budgets.list();
+      if (data && data.totalBudget) {
+        setBudgetsData(data);
+      }
+    } catch (err) {
+      console.error("Failed to load budgets:", err);
+      setError("Failed to load budgets. Using demo data.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNewBudget = (newBudget) => {
+    if (budgetsData.categories) {
+      setBudgetsData({
+        ...budgetsData,
+        categories: [newBudget, ...budgetsData.categories],
+      });
+    }
+    setIsModalOpen(false);
+  };
 
   return (
     <div style={{
@@ -327,11 +550,13 @@ export const Budgets = () => {
             display: "flex", alignItems: "center", gap: "8px", cursor: "pointer",
           }}>
             <Calendar size={15} />
-            {month}
+            October 2026
             <ChevronDown size={14} />
           </button>
           {/* new budget */}
-          <button style={{
+          <button
+            onClick={() => setIsModalOpen(true)}
+            style={{
             padding: "9px 18px", borderRadius: "8px",
             border: "none", backgroundColor: "#2F6F63",
             fontSize: "14px", fontWeight: 500, color: "#fff",
@@ -572,6 +797,8 @@ export const Budgets = () => {
           </div>
         </div>
       </div>
+
+      <NewBudgetModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleNewBudget} />
     </div>
   );
 };
