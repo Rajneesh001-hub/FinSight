@@ -73,12 +73,19 @@ export const api = {
 
   // Import / Export
   import: {
-    csv: (formData) =>
-      fetch(`${BASE_URL}/import`, {
+    csv: async (formData) => {
+      const token = await getToken();
+      const res = await fetch(`${BASE_URL}/import`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${token}` },
         body: formData, // multipart/form-data, no Content-Type header
-      }).then((r) => r.json()),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || data.message || "Import failed");
+      }
+      return data;
+    },
   },
 
   export: {
