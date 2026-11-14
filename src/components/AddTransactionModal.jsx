@@ -26,6 +26,13 @@ export const AddTransactionModal = ({ isOpen, onClose, onSave }) => {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
 
+  React.useEffect(() => {
+    if (!isOpen) {
+      setErrors({});
+      setApiError("");
+    }
+  }, [isOpen]);
+
   const categories = [
     "Food & Dining",
     "Office & Rent",
@@ -134,6 +141,20 @@ export const AddTransactionModal = ({ isOpen, onClose, onSave }) => {
 
   return (
     <>
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+      `}</style>
       {/* Backdrop */}
       <div
         onClick={handleCancel}
