@@ -16,8 +16,118 @@ import {
   ChevronDown,
   ArrowRight,
   AlertCircle,
+  Trash2,
+  X,
 } from "lucide-react";
 import { api } from "../utils/apiClient";
+
+// Toast notification component
+const Toast = ({ message, type = "success", visible }) => {
+  if (!visible) return null;
+  const colors = {
+    success: { bg: "#D1FAE5", text: "#059669", icon: CheckCircle },
+    error: { bg: "#FEE2E2", text: "#DC2626", icon: AlertCircle },
+  };
+  const { bg, text, icon: Icon } = colors[type];
+  return (
+    <div style={{
+      position: "fixed",
+      bottom: "20px",
+      right: "20px",
+      backgroundColor: bg,
+      color: text,
+      padding: "12px 16px",
+      borderRadius: "8px",
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      fontSize: "14px",
+      fontWeight: 500,
+      zIndex: 9999,
+      boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+    }}>
+      <Icon size={16} />
+      {message}
+    </div>
+  );
+};
+
+// Confirmation Dialog Component
+const ConfirmDialog = ({ isOpen, title, message, onConfirm, onCancel, loading, isDanger = false }) => {
+  if (!isOpen) return null;
+  return (
+    <>
+      <div
+        onClick={onCancel}
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          zIndex: 60,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: "12px",
+            width: "90%",
+            maxWidth: "400px",
+            padding: "20px",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+            fontFamily: "Inter, sans-serif",
+          }}
+        >
+          <h3 style={{ fontSize: "18px", fontWeight: 600, color: "#111827", margin: "0 0 8px" }}>
+            {title}
+          </h3>
+          <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 20px" }}>
+            {message}
+          </p>
+          <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end" }}>
+            <button
+              onClick={onCancel}
+              disabled={loading}
+              style={{
+                padding: "8px 16px",
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#374151",
+                backgroundColor: "#fff",
+                border: "1px solid #D1D5DB",
+                borderRadius: "6px",
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.6 : 1,
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onConfirm}
+              disabled={loading}
+              style={{
+                padding: "8px 16px",
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#fff",
+                backgroundColor: isDanger ? "#DC2626" : "#2F6F63",
+                border: "none",
+                borderRadius: "6px",
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.7 : 1,
+              }}
+            >
+              {loading ? "Processing..." : "Confirm"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
 
 // ─── data ────────────────────────────────────────────────────────────────────
 const budgetData = {
@@ -154,12 +264,13 @@ const statusLabel = {
 };
 
 // ─── sub-components ───────────────────────────────────────────────────────────
-const BudgetCard = ({ cat }) => {
+const BudgetCard = ({ cat, onEdit, onDelete }) => {
   const p = pct(cat.spent, cat.limit);
   const st = statusStyles[cat.status];
   const remaining = cat.limit - cat.spent;
   const isOver = cat.spent > cat.limit;
   const Icon = cat.icon;
+  const [showMenu, setShowMenu] = useState(false);
 
   return (
     <div style={{
@@ -171,6 +282,7 @@ const BudgetCard = ({ cat }) => {
       flexDirection: "column",
       gap: "12px",
       fontFamily: "Inter, sans-serif",
+      position: "relative",
     }}>
       {/* top row */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
@@ -187,15 +299,91 @@ const BudgetCard = ({ cat }) => {
             <p style={{ fontSize: "12px", color: "#6B7280", margin: 0 }}>{cat.subtitle}</p>
           </div>
         </div>
-        <button style={{
-          padding: "4px", backgroundColor: "transparent", border: "none",
-          cursor: "pointer", borderRadius: "6px", color: "#9CA3AF",
-        }}
-          onMouseEnter={e => e.currentTarget.style.backgroundColor = "#F3F4F6"}
-          onMouseLeave={e => e.currentTarget.style.backgroundColor = "transparent"}
-        >
-          <Edit2 size={14} />
-        </button>
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => setShowMenu(!showMenu)}
+            style={{
+              padding: "4px",
+              backgroundColor: "transparent",
+              border: "none",
+              cursor: "pointer",
+              borderRadius: "6px",
+              color: "#9CA3AF",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#F3F4F6"}
+            onMouseLeave={(e) => !showMenu && (e.currentTarget.style.backgroundColor = "transparent")}
+          >
+            <Edit2 size={14} />
+          </button>
+          {showMenu && (
+            <div
+              style={{
+                position: "absolute",
+                top: "100%",
+                right: 0,
+                backgroundColor: "#fff",
+                border: "1px solid #E5E7EB",
+                borderRadius: "6px",
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+                zIndex: 10,
+                minWidth: "120px",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                onClick={() => {
+                  onEdit(cat);
+                  setShowMenu(false);
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "none",
+                  backgroundColor: "transparent",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  color: "#374151",
+                  borderTopLeftRadius: "6px",
+                  borderTopRightRadius: "6px",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#F3F4F6")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              >
+                <Edit2 size={14} /> Edit
+              </button>
+              <button
+                onClick={() => {
+                  onDelete(cat);
+                  setShowMenu(false);
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "none",
+                  backgroundColor: "transparent",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  color: "#DC2626",
+                  borderBottomLeftRadius: "6px",
+                  borderBottomRightRadius: "6px",
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#FEE2E2")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+              >
+                <Trash2 size={14} /> Delete
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* amount */}
@@ -475,13 +663,308 @@ const NewBudgetModal = ({ isOpen, onClose, onSave }) => {
   );
 };
 
+// ─── Edit Budget Modal ─────────────────────────────────────────────────────────
+const EditBudgetModal = ({ isOpen, onClose, onSave, budget }) => {
+  const [formData, setFormData] = useState({
+    name: budget?.name || "",
+    description: budget?.description || "",
+    amount: budget?.limit || "",
+    category: budget?.category || "Food & Groceries",
+    period: budget?.period || "monthly",
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (budget) {
+      setFormData({
+        name: budget.name || budget.category || "",
+        description: budget.description || "",
+        amount: budget.limit || "",
+        category: budget.category || "Food & Groceries",
+        period: budget.period || "monthly",
+      });
+    }
+  }, [budget]);
+
+  const categories = [
+    "Food & Groceries",
+    "Shopping & Lifestyle",
+    "Transportation & Fuel",
+    "Utilities & Subscriptions",
+    "Office & Workspace",
+    "Health & Personal Care",
+  ];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!formData.name || !formData.amount || !formData.category) {
+      setError("Name, amount, and category are required");
+      return;
+    }
+
+    const amount = parseFloat(formData.amount);
+    if (isNaN(amount) || amount <= 0) {
+      setError("Budget amount must be greater than 0");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const updatedBudget = await api.budgets.update(budget.id, {
+        name: formData.name,
+        description: formData.description,
+        limit: amount,
+        category: formData.category,
+        period: formData.period,
+      });
+      onSave(updatedBudget);
+      onClose();
+    } catch (err) {
+      setError(err.message || "Failed to update budget");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          zIndex: 50,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: "16px",
+            width: "90%",
+            maxWidth: "500px",
+            padding: "24px",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+            fontFamily: "Inter, sans-serif",
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#111827", margin: 0 }}>
+              Edit Budget
+            </h2>
+            <button
+              onClick={onClose}
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "#9CA3AF",
+                padding: "0",
+              }}
+            >
+              <X size={20} />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Budget Name *
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="e.g., Monthly Food Budget"
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Description
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Add notes about this budget..."
+                rows="3"
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  fontFamily: "Inter, sans-serif",
+                  resize: "none",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Category *
+              </label>
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  cursor: "pointer",
+                }}
+              >
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Amount (₹) *
+              </label>
+              <input
+                type="number"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                placeholder="0"
+                step="1000"
+                min="0"
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Period
+              </label>
+              <select
+                value={formData.period}
+                onChange={(e) => setFormData({ ...formData, period: e.target.value })}
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  cursor: "pointer",
+                }}
+              >
+                <option value="monthly">Monthly</option>
+                <option value="quarterly">Quarterly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </div>
+
+            {error && (
+              <div style={{
+                backgroundColor: "#FEE2E2",
+                color: "#DC2626",
+                padding: "12px",
+                borderRadius: "8px",
+                fontSize: "13px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}>
+                <AlertCircle size={16} />
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#374151",
+                  backgroundColor: "#fff",
+                  border: "1px solid #D1D5DB",
+                  borderRadius: "8px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.6 : 1,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#fff",
+                  backgroundColor: loading ? "#9BE7D3" : "#2F6F63",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.7 : 1,
+                }}
+              >
+                {loading ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+};
+
 // ─── main page ────────────────────────────────────────────────────────────────
 export const Budgets = () => {
   const [month, setMonth] = useState("October 2026");
   const [budgetsData, setBudgetsData] = useState(budgetData);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingBudget, setEditingBudget] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const { totalBudget, totalSpent, daysRemaining, categories } = budgetsData;
   const remaining = totalBudget - totalSpent;
   const usedPct = pct(totalSpent, totalBudget);
@@ -489,6 +972,21 @@ export const Budgets = () => {
   useEffect(() => {
     loadBudgets();
   }, []);
+
+  // Auto dismiss toast after 3 seconds
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
+  useEffect(() => {
+    if (errorMessage) {
+      const timer = setTimeout(() => setErrorMessage(""), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [errorMessage]);
 
   const loadBudgets = async () => {
     try {
@@ -512,7 +1010,51 @@ export const Budgets = () => {
         categories: [newBudget, ...budgetsData.categories],
       });
     }
-    setIsModalOpen(false);
+    setIsCreateModalOpen(false);
+    setSuccessMessage("Budget created successfully!");
+  };
+
+  const handleEditClick = (budget) => {
+    setEditingBudget(budget);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteClick = (budget) => {
+    setDeleteConfirm(budget);
+  };
+
+  const handleEditBudget = (updatedBudget) => {
+    if (budgetsData.categories) {
+      setBudgetsData({
+        ...budgetsData,
+        categories: budgetsData.categories.map((cat) =>
+          cat.id === updatedBudget.id ? updatedBudget : cat
+        ),
+      });
+    }
+    setIsEditModalOpen(false);
+    setEditingBudget(null);
+    setSuccessMessage("Budget updated successfully!");
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirm) return;
+
+    try {
+      setDeleteLoading(true);
+      await api.budgets.delete(deleteConfirm.id);
+      setBudgetsData({
+        ...budgetsData,
+        categories: budgetsData.categories.filter((cat) => cat.id !== deleteConfirm.id),
+      });
+      setDeleteConfirm(null);
+      setSuccessMessage("Budget deleted successfully!");
+    } catch (err) {
+      console.error("Failed to delete budget:", err);
+      setErrorMessage(err.message || "Failed to delete budget");
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   return (
@@ -522,6 +1064,21 @@ export const Budgets = () => {
       minHeight: "100vh",
       fontFamily: "Inter, sans-serif",
     }}>
+      {/* Toasts */}
+      <Toast message={successMessage} type="success" visible={!!successMessage} />
+      <Toast message={errorMessage} type="error" visible={!!errorMessage} />
+
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={!!deleteConfirm}
+        title="Delete Budget"
+        message={`Are you sure you want to delete the "${deleteConfirm?.name || deleteConfirm?.category}" budget? This action cannot be undone.`}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setDeleteConfirm(null)}
+        loading={deleteLoading}
+        isDanger={true}
+      />
+
       {/* breadcrumb */}
       <div style={{ fontSize: "12px", color: "#6B7280", marginBottom: "6px", display: "flex", gap: "6px" }}>
         <span>PORTFOLIO</span><span>›</span>
@@ -555,7 +1112,7 @@ export const Budgets = () => {
           </button>
           {/* new budget */}
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsCreateModalOpen(true)}
             style={{
             padding: "9px 18px", borderRadius: "8px",
             border: "none", backgroundColor: "#2F6F63",
@@ -617,10 +1174,12 @@ export const Budgets = () => {
               </p>
               <span style={{
                 padding: "2px 7px", borderRadius: "999px",
-                backgroundColor: "#FEF3C7", color: "#D97706",
+                backgroundColor: usedPct > 80 ? "#FEF3C7" : "#D1FAE5",
+                color: usedPct > 80 ? "#D97706" : "#059669",
                 fontSize: "11px", fontWeight: 600,
               }}>
                 {usedPct}%
+                {usedPct > 80 && " ⚠"}
               </span>
             </div>
             <p style={{ fontSize: "26px", fontWeight: 700, color: "#111827", margin: "0 0 4px" }}>
@@ -656,8 +1215,8 @@ export const Budgets = () => {
             <span style={{ fontSize: "13px", color: "#374151" }}>
               <strong>{usedPct}% utilized</strong> · {formatINR(totalSpent)} of {formatINR(totalBudget)} threshold
             </span>
-            <span style={{ fontSize: "12px", color: "#D97706", fontWeight: 500, display: "flex", alignItems: "center", gap: "4px" }}>
-              ⏱ {daysRemaining} days remaining in billing cycle
+            <span style={{ fontSize: "12px", color: usedPct > 80 ? "#D97706" : "#6B7280", fontWeight: 500, display: "flex", alignItems: "center", gap: "4px" }}>
+              {usedPct > 80 && "⏱"} {daysRemaining} days remaining in billing cycle
             </span>
           </div>
 
@@ -667,7 +1226,7 @@ export const Budgets = () => {
             <div style={{
               position: "absolute", left: 0, top: 0, bottom: 0,
               width: `${usedPct}%`,
-              background: "linear-gradient(to right, #2F6F63, #9BE7D3)",
+              background: usedPct > 80 ? "linear-gradient(to right, #F59E0B, #DC2626)" : "linear-gradient(to right, #2F6F63, #9BE7D3)",
               borderRadius: "999px",
               transition: "width 0.5s ease",
             }} />
@@ -712,13 +1271,20 @@ export const Budgets = () => {
               fontSize: "12px", fontWeight: 600, padding: "4px 10px",
               borderRadius: "999px", backgroundColor: "#E6F4F1", color: "#2F6F63",
             }}>
-              6 Categories
+              {categories?.length || 6} Categories
             </span>
           </div>
 
           {/* 2-column card grid */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
-            {categories.map(cat => <BudgetCard key={cat.id} cat={cat} />)}
+            {categories?.map(cat => (
+              <BudgetCard
+                key={cat.id}
+                cat={cat}
+                onEdit={handleEditClick}
+                onDelete={handleDeleteClick}
+              />
+            )) || <p style={{ color: "#6B7280" }}>No budgets yet</p>}
           </div>
         </div>
 
@@ -798,7 +1364,9 @@ export const Budgets = () => {
         </div>
       </div>
 
-      <NewBudgetModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleNewBudget} />
+      {/* Modals */}
+      <NewBudgetModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} onSave={handleNewBudget} />
+      <EditBudgetModal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} onSave={handleEditBudget} budget={editingBudget} />
     </div>
   );
 };
