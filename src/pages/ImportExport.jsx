@@ -151,15 +151,28 @@ export const ImportExport = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [currentStep] = useState(2);
   const [exportFormat, setExportFormat] = useState("CSV");
-  const [dateRange, setDateRange] = useState("Current Financial Year (FY 202...)");
-  const [account, setAccount] = useState("All Accounts (HDFC, ICICI, Ame...)");
+  const [dateRange, setDateRange] = useState("Current Financial Year (FY 2026)");
+  const [account, setAccount] = useState("All Accounts (HDFC, ICICI, Amex)");
   const [loading, setLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = React.useRef(null);
+
+  const validateFile = (file) => {
+    if (!file) return false;
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+      setErrorMessage("Only CSV files are supported");
+      setTimeout(() => setErrorMessage(""), 3000);
+      return false;
+    }
+    return true;
+  };
 
   const handleFileSelect = async (file) => {
-    if (!file) return;
+    if (!validateFile(file)) return;
 
+    setSelectedFile(file);
     const formData = new FormData();
     formData.append("file", file);
 
@@ -168,9 +181,12 @@ export const ImportExport = () => {
       const result = await api.import.csv(formData);
       if (result.success || result.imported) {
         setSuccessMessage(`Successfully imported ${result.imported || result.count || 0} transactions`);
+        setSelectedFile(null);
+        if (fileInputRef.current) fileInputRef.current.value = "";
         setTimeout(() => setSuccessMessage(""), 3000);
       }
     } catch (err) {
+      console.error("Import error:", err);
       setErrorMessage(err.message || "Failed to import file");
       setTimeout(() => setErrorMessage(""), 3000);
     } finally {
@@ -178,13 +194,19 @@ export const ImportExport = () => {
     }
   };
 
+  const handleClearFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const handleExport = async () => {
     try {
       setLoading(true);
       await api.export.csv();
-      setSuccessMessage("Export started successfully!");
+      setSuccessMessage("Export completed successfully! File downloaded.");
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
+      console.error("Export error:", err);
       setErrorMessage(err.message || "Failed to export data");
       setTimeout(() => setErrorMessage(""), 3000);
     } finally {
@@ -353,9 +375,14 @@ export const ImportExport = () => {
                 <Upload size={24} color="#2F6F63" />
               </div>
               <p style={{ fontSize: "15px", fontWeight: 600, color: "#111827", margin: "0 0 6px" }}>
-                Drag and drop your bank statement (CSV, XLSX, XLS) here, or browse
+                Drag and drop your bank statement (CSV) here, or browse
               </p>
-              <p style={{ fontSize: "13px", color: "#6B7280", margin: "0 0 20px", lineHeight: 1.5 }}>
+              {selectedFile && (
+                <p style={{ fontSize: "13px", color: "#059669", margin: "0 0 20px", fontWeight: 600 }}>
+                  ✓ Selected: {selectedFile.name}
+                </p>
+              )}
+              <p style={{ fontSize: "13px", color: "#6B7280", margin: selectedFile ? "0 0 20px" : "0 0 20px", lineHeight: 1.5 }}>
                 FinSight's smart parser automatically maps headers, standardises<br />
                 currency values, and checks for transaction hash collisions.
               </p>
@@ -367,10 +394,11 @@ export const ImportExport = () => {
                   display: "flex", alignItems: "center", gap: "7px", cursor: loading ? "not-allowed" : "pointer",
                   opacity: loading ? 0.6 : 1,
                 }}>
-                  <FileText size={15} /> Choose file
+                  <FileText size={15} /> {selectedFile ? "Change file" : "Choose file"}
                   <input
+                    ref={fileInputRef}
                     type="file"
-                    accept=".csv,.xlsx,.xls"
+                    accept=".csv"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) handleFileSelect(file);
@@ -379,6 +407,21 @@ export const ImportExport = () => {
                     style={{ display: "none" }}
                   />
                 </label>
+                {selectedFile && (
+                  <button
+                    onClick={handleClearFile}
+                    disabled={loading}
+                    style={{
+                      padding: "10px 20px", borderRadius: "8px",
+                      border: "1px solid #FCA5A5", backgroundColor: "#FEE2E2",
+                      fontSize: "14px", fontWeight: 500, color: "#DC2626",
+                      display: "flex", alignItems: "center", gap: "7px", cursor: "pointer",
+                      opacity: loading ? 0.6 : 1,
+                    }}
+                  >
+                    <X size={15} /> Clear
+                  </button>
+                )}
                 <button style={{
                   padding: "10px 20px", borderRadius: "8px",
                   border: "1px solid #D1D5DB", backgroundColor: "#fff",
@@ -436,23 +479,26 @@ export const ImportExport = () => {
 
             {/* column mapping row */}
             <div style={{ display: "grid", gridTemplateColumns: "120px 1fr 130px 160px 40px", gap: "0", backgroundColor: "#F9FAFB", borderRadius: "8px 8px 0 0", border: "1px solid #E5E7EB", borderBottom: "none", padding: "10px 12px" }}>
-              {["SOURCE: COL 1", "SOURCE: COL 2", "SOURCE: COL 3", "SOURCE: COL 4"].map((col, i) => (
-                <div key={i} style={{ paddingRight: "8px" }}>
-                  <p style={{ fontSize: "9px", fontWeight: 600, color: "#9CA3AF", margin: "0 0 4px", letterSpacing: ".05em" }}>{col}</p>
-                  <select style={{
-                    width: "100%", padding: "5px 8px",
-                    fontSize: "12px", color: "#374151",
-                    border: "1px solid #D1D5DB", borderRadius: "6px",
-                    backgroundColor: "#fff", cursor: "pointer", outline: "none",
-                  }}>
-                    {columnMappings.map(m => (
-                      <option key={m} selected={m === ["Date", "Description / Payee", "Amount (INR)", "Category"][i]}>
-                        {m === ["Date", "Description / Payee", "Amount (INR)", "Category"][i] ? `Map to: ${["T...", "Description / Pay", "A...", "Expense C..."][i]}` : m}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ))}
+              {["SOURCE: COL 1", "SOURCE: COL 2", "SOURCE: COL 3", "SOURCE: COL 4"].map((col, i) => {
+                const defaultValue = ["Date", "Description / Payee", "Amount (INR)", "Category"][i];
+                return (
+                  <div key={i} style={{ paddingRight: "8px" }}>
+                    <p style={{ fontSize: "9px", fontWeight: 600, color: "#9CA3AF", margin: "0 0 4px", letterSpacing: ".05em" }}>{col}</p>
+                    <select value={defaultValue} style={{
+                      width: "100%", padding: "5px 8px",
+                      fontSize: "12px", color: "#374151",
+                      border: "1px solid #D1D5DB", borderRadius: "6px",
+                      backgroundColor: "#fff", cursor: "pointer", outline: "none",
+                    }}>
+                      {columnMappings.map(m => (
+                        <option key={m} value={m}>
+                          {m === defaultValue ? `Map to: ${["T...", "Description / Pay", "A...", "Expense C..."][i]}` : m}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              })}
               <div />
             </div>
 
@@ -599,17 +645,17 @@ export const ImportExport = () => {
             {/* date range */}
             <p style={{ fontSize: "11px", fontWeight: 600, color: "#6B7280", textTransform: "uppercase", letterSpacing: ".05em", margin: "0 0 6px" }}>Date Range</p>
             <div style={{ position: "relative", marginBottom: "14px" }}>
-              <select style={{
+              <select value={dateRange} onChange={(e) => setDateRange(e.target.value)} style={{
                 width: "100%", padding: "10px 36px 10px 12px",
                 fontSize: "13px", color: "#374151",
                 border: "1px solid #D1D5DB", borderRadius: "8px",
                 backgroundColor: "#F9FAFB", cursor: "pointer",
                 outline: "none", appearance: "none",
               }}>
-                <option>Current Financial Year (FY 2026)</option>
-                <option>Last 3 months</option>
-                <option>Last 6 months</option>
-                <option>Custom range</option>
+                <option value="Current Financial Year (FY 2026)">Current Financial Year (FY 2026)</option>
+                <option value="Last 3 months">Last 3 months</option>
+                <option value="Last 6 months">Last 6 months</option>
+                <option value="Custom range">Custom range</option>
               </select>
               <ChevronDown size={14} color="#6B7280" style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
             </div>
@@ -617,17 +663,17 @@ export const ImportExport = () => {
             {/* account */}
             <p style={{ fontSize: "11px", fontWeight: 600, color: "#6B7280", textTransform: "uppercase", letterSpacing: ".05em", margin: "0 0 6px" }}>Account / Ledger</p>
             <div style={{ position: "relative", marginBottom: "18px" }}>
-              <select style={{
+              <select value={account} onChange={(e) => setAccount(e.target.value)} style={{
                 width: "100%", padding: "10px 36px 10px 12px",
                 fontSize: "13px", color: "#374151",
                 border: "1px solid #D1D5DB", borderRadius: "8px",
                 backgroundColor: "#F9FAFB", cursor: "pointer",
                 outline: "none", appearance: "none",
               }}>
-                <option>All Accounts (HDFC, ICICI, Amex)</option>
-                <option>HDFC Business Bank</option>
-                <option>ICICI Current</option>
-                <option>Amex Card •• 4092</option>
+                <option value="All Accounts (HDFC, ICICI, Amex)">All Accounts (HDFC, ICICI, Amex)</option>
+                <option value="HDFC Business Bank">HDFC Business Bank</option>
+                <option value="ICICI Current">ICICI Current</option>
+                <option value="Amex Card •• 4092">Amex Card •• 4092</option>
               </select>
               <ChevronDown size={14} color="#6B7280" style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
             </div>
