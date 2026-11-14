@@ -63,6 +63,8 @@ export const Transactions = () => {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     loadTransactions();
@@ -93,17 +95,62 @@ export const Transactions = () => {
   // Handle delete
   const handleDeleteTransaction = async (id) => {
     try {
-      setLoading(true);
+      setDeleteLoading(true);
       await api.transactions.delete(id);
       setTransactions(transactions.filter(t => t.id !== id));
       setDeleteConfirm(null);
       setSuccessMessage("Transaction deleted successfully!");
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
+      console.error("Failed to delete transaction:", err);
       setErrorMessage(err.message || "Failed to delete transaction");
       setTimeout(() => setErrorMessage(""), 3000);
     } finally {
-      setLoading(false);
+      setDeleteLoading(false);
+    }
+  };
+
+  // Handle bulk delete
+  const handleBulkDelete = async () => {
+    if (selectedRows.length === 0) return;
+
+    try {
+      setDeleteLoading(true);
+      let successCount = 0;
+      let failedIds = [];
+
+      // Delete each selected transaction
+      for (const id of selectedRows) {
+        try {
+          await api.transactions.delete(id);
+          successCount++;
+        } catch (err) {
+          console.error(`Failed to delete transaction ${id}:`, err);
+          failedIds.push(id);
+        }
+      }
+
+      // Remove successfully deleted transactions from UI
+      setTransactions(transactions.filter(t => !selectedRows.includes(t.id) || failedIds.includes(t.id)));
+      setSelectedRows([]);
+      setBulkDeleteConfirm(false);
+
+      if (failedIds.length === 0) {
+        setSuccessMessage(`${successCount} transaction${successCount !== 1 ? 's' : ''} deleted successfully!`);
+      } else {
+        setErrorMessage(`Deleted ${successCount}, but ${failedIds.length} failed. Please try again.`);
+      }
+
+      setTimeout(() => {
+        setSuccessMessage("");
+        setErrorMessage("");
+      }, 3000);
+    } catch (err) {
+      console.error("Bulk delete error:", err);
+      setErrorMessage(err.message || "Bulk delete failed");
+      setTimeout(() => setErrorMessage(""), 3000);
+    } finally {
+      setDeleteLoading(false);
     }
   };
 
@@ -821,19 +868,24 @@ export const Transactions = () => {
               <Download size={16} />
               Export selected
             </button>
-            <button style={{
-              padding: "8px 16px",
-              fontSize: "14px",
-              fontWeight: 500,
-              color: "#ffffff",
-              backgroundColor: "#DC2626",
-              border: "none",
-              borderRadius: "6px",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-            }}>
+            <button 
+              onClick={() => setBulkDeleteConfirm(true)}
+              disabled={deleteLoading}
+              style={{
+                padding: "8px 16px",
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#ffffff",
+                backgroundColor: "#DC2626",
+                border: "none",
+                borderRadius: "6px",
+                cursor: deleteLoading ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px",
+                opacity: deleteLoading ? 0.6 : 1,
+              }}>
+              {deleteLoading && <Loader size={16} style={{ animation: "spin 1s linear infinite" }} />}
               <Trash2 size={16} />
               Delete ({selectedRows.length})
             </button>
@@ -1305,7 +1357,7 @@ export const Transactions = () => {
             <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
               <button
                 onClick={() => setDeleteConfirm(null)}
-                disabled={loading}
+                disabled={deleteLoading}
                 style={{
                   padding: "10px 20px",
                   fontSize: "14px",
@@ -1314,31 +1366,109 @@ export const Transactions = () => {
                   backgroundColor: "#fff",
                   border: "1px solid #D1D5DB",
                   borderRadius: "8px",
-                  cursor: loading ? "not-allowed" : "pointer",
+                  cursor: deleteLoading ? "not-allowed" : "pointer",
                 }}
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDeleteTransaction(deleteConfirm)}
-                disabled={loading}
+                disabled={deleteLoading}
                 style={{
                   padding: "10px 20px",
                   fontSize: "14px",
                   fontWeight: 500,
                   color: "#fff",
-                  backgroundColor: loading ? "#F87171" : "#DC2626",
+                  backgroundColor: deleteLoading ? "#F87171" : "#DC2626",
                   border: "none",
                   borderRadius: "8px",
-                  cursor: loading ? "not-allowed" : "pointer",
+                  cursor: deleteLoading ? "not-allowed" : "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   gap: "8px",
                 }}
               >
-                {loading && <Loader size={14} style={{ animation: "spin 1s linear infinite" }} />}
-                {loading ? "Deleting..." : "Delete"}
+                {deleteLoading && <Loader size={14} style={{ animation: "spin 1s linear infinite" }} />}
+                {deleteLoading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Delete Confirmation Dialog */}
+      {bulkDeleteConfirm && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          zIndex: 100,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}>
+          <div style={{
+            backgroundColor: "#fff",
+            borderRadius: "12px",
+            padding: "24px",
+            maxWidth: "400px",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+          }}>
+            <h3 style={{ fontSize: "18px", fontWeight: 700, color: "#111827", margin: "0 0 8px" }}>
+              Delete {selectedRows.length} Transaction{selectedRows.length !== 1 ? 's' : ''}
+            </h3>
+            <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 12px" }}>
+              Are you sure you want to delete {selectedRows.length} transaction{selectedRows.length !== 1 ? 's' : ''}? This action cannot be undone.
+            </p>
+            <div style={{
+              backgroundColor: "#FEF2F2",
+              border: "1px solid #FECACA",
+              borderRadius: "8px",
+              padding: "12px",
+              marginBottom: "20px",
+              fontSize: "14px",
+              color: "#DC2626",
+            }}>
+              Combined amount: <strong>{formatIndianCurrency(combinedTotal)}</strong>
+            </div>
+            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setBulkDeleteConfirm(false)}
+                disabled={deleteLoading}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#374151",
+                  backgroundColor: "#fff",
+                  border: "1px solid #D1D5DB",
+                  borderRadius: "8px",
+                  cursor: deleteLoading ? "not-allowed" : "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleBulkDelete()}
+                disabled={deleteLoading}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#fff",
+                  backgroundColor: deleteLoading ? "#F87171" : "#DC2626",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: deleteLoading ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                }}
+              >
+                {deleteLoading && <Loader size={14} style={{ animation: "spin 1s linear infinite" }} />}
+                {deleteLoading ? "Deleting..." : "Delete All"}
               </button>
             </div>
           </div>
