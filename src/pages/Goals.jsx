@@ -17,6 +17,7 @@ import {
   ChevronDown,
   ArrowUpRight,
   AlertCircle,
+  Trash2,
 } from "lucide-react";
 import { api } from "../utils/apiClient";
 
@@ -171,7 +172,7 @@ const CircleRing = ({ pct, completed }) => {
 };
 
 // ─── Goal card ────────────────────────────────────────────────────────────────
-const GoalCard = ({ goal }) => {
+const GoalCard = ({ goal, onEdit, onAddMoney, onDelete }) => {
   const Icon = goal.icon;
   const isCompleted = goal.status === "completed";
 
@@ -278,20 +279,26 @@ const GoalCard = ({ goal }) => {
       <div style={{ display: "flex", gap: "10px" }}>
         {isCompleted ? (
           <>
-            <button style={btnOutline}>
+            <button onClick={() => onEdit(goal)} style={btnOutline}>
               <Edit2 size={14} /> Edit
             </button>
             <button style={btnOutline}>
               <TrendingUp size={14} /> Purchase note
             </button>
+            <button onClick={() => onDelete(goal)} style={{ ...btnOutline, color: "#DC2626" }}>
+              <Trash2 size={14} /> Delete
+            </button>
           </>
         ) : (
           <>
-            <button style={btnOutline}>
+            <button onClick={() => onEdit(goal)} style={btnOutline}>
               <Edit2 size={14} /> Edit
             </button>
-            <button style={btnPrimary}>
+            <button onClick={() => onAddMoney(goal)} style={btnPrimary}>
               <Plus size={14} /> Add money
+            </button>
+            <button onClick={() => onDelete(goal)} style={{ ...btnOutline, color: "#DC2626" }}>
+              <Trash2 size={14} /> Delete
             </button>
           </>
         )}
@@ -561,12 +568,577 @@ const NewGoalModal = ({ isOpen, onClose, onSave }) => {
   );
 };
 
+// ─── Toast Notification ───────────────────────────────────────────────────────
+const Toast = ({ message, type, onClose }) => {
+  const bgColor = type === "success" ? "#D1FAE5" : "#FEE2E2";
+  const textColor = type === "success" ? "#059669" : "#DC2626";
+  const icon = type === "success" ? "✓" : "✕";
+
+  useEffect(() => {
+    const timer = setTimeout(onClose, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div style={{
+      position: "fixed",
+      top: "20px",
+      right: "20px",
+      backgroundColor: bgColor,
+      color: textColor,
+      padding: "12px 16px",
+      borderRadius: "8px",
+      fontSize: "14px",
+      fontWeight: 500,
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      zIndex: 1000,
+      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+    }}>
+      <span style={{ fontSize: "16px" }}>{icon}</span>
+      {message}
+    </div>
+  );
+};
+
+// ─── Add Money Modal ───────────────────────────────────────────────────────────
+const AddMoneyModal = ({ isOpen, goal, onClose, onSuccess }) => {
+  const [amount, setAmount] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    const amountNum = parseFloat(amount);
+    if (!amount || isNaN(amountNum) || amountNum <= 0) {
+      setError("Please enter a valid amount greater than 0");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const newAmount = (goal.saved || 0) + amountNum;
+      await api.goals.update(goal.id, { currentAmount: newAmount });
+      onSuccess();
+      onClose();
+      setAmount("");
+    } catch (err) {
+      setError(err.message || "Failed to add money to goal");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen || !goal) return null;
+
+  const percentage = goal.target > 0 ? Math.round(((goal.saved || 0) / goal.target) * 100) : 0;
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          zIndex: 50,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: "16px",
+            width: "90%",
+            maxWidth: "450px",
+            padding: "24px",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+            fontFamily: "Inter, sans-serif",
+          }}
+        >
+          <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#111827", margin: "0 0 16px" }}>
+            Add Money to {goal.name}
+          </h2>
+
+          {/* Progress display */}
+          <div style={{
+            backgroundColor: "#F9FAFB",
+            padding: "16px",
+            borderRadius: "8px",
+            marginBottom: "20px",
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+              <span style={{ fontSize: "13px", color: "#6B7280" }}>Current Progress</span>
+              <span style={{ fontSize: "13px", fontWeight: 600, color: "#111827" }}>{percentage}%</span>
+            </div>
+            <div style={{ display: "flex", gap: "10px", fontSize: "12px", color: "#6B7280" }}>
+              <span>{fmt(goal.saved || 0)} saved</span>
+              <span>•</span>
+              <span>{fmt(goal.target)} target</span>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Amount to Add (₹) *
+              </label>
+              <input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0"
+                step="100"
+                min="0"
+                autoFocus
+                style={{
+                  width: "100%",
+                  padding: "12px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            {error && (
+              <div style={{
+                backgroundColor: "#FEE2E2",
+                color: "#DC2626",
+                padding: "12px",
+                borderRadius: "8px",
+                fontSize: "13px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}>
+                <AlertCircle size={16} />
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#374151",
+                  backgroundColor: "#fff",
+                  border: "1px solid #D1D5DB",
+                  borderRadius: "8px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.5 : 1,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#fff",
+                  backgroundColor: loading ? "#9BE7D3" : "#2F6F63",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.7 : 1,
+                }}
+              >
+                {loading ? "Adding..." : "Add Money"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+};
+
+// ─── Edit Goal Modal ───────────────────────────────────────────────────────────
+const EditGoalModal = ({ isOpen, goal, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    targetAmount: "",
+    category: "",
+    deadline: "",
+  });
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (goal && isOpen) {
+      setFormData({
+        name: goal.name || "",
+        description: goal.subtitle || "",
+        targetAmount: goal.target || "",
+        category: goal.tag || "",
+        deadline: goal.dueLabel || "",
+      });
+      setError("");
+    }
+  }, [goal, isOpen]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!formData.name || !formData.targetAmount) {
+      setError("Goal name and target amount are required");
+      return;
+    }
+
+    const targetAmount = parseFloat(formData.targetAmount);
+    if (isNaN(targetAmount) || targetAmount <= 0) {
+      setError("Target amount must be greater than 0");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await api.goals.update(goal.id, {
+        name: formData.name,
+        description: formData.description,
+        targetAmount,
+        category: formData.category,
+        deadline: formData.deadline,
+      });
+      onSuccess();
+      onClose();
+    } catch (err) {
+      setError(err.message || "Failed to update goal");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen || !goal) return null;
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          zIndex: 50,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: "16px",
+            width: "90%",
+            maxWidth: "500px",
+            padding: "24px",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+            fontFamily: "Inter, sans-serif",
+            maxHeight: "90vh",
+            overflowY: "auto",
+          }}
+        >
+          <h2 style={{ fontSize: "20px", fontWeight: 700, color: "#111827", margin: "0 0 16px" }}>
+            Edit Goal
+          </h2>
+
+          <form onSubmit={handleSubmit}>
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Goal Name *
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="e.g., Emergency Fund"
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Description
+              </label>
+              <textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="Add details about this goal..."
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                  minHeight: "80px",
+                  fontFamily: "Inter, sans-serif",
+                  resize: "vertical",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Target Amount (₹) *
+              </label>
+              <input
+                type="number"
+                value={formData.targetAmount}
+                onChange={(e) => setFormData({ ...formData, targetAmount: e.target.value })}
+                placeholder="0"
+                step="1000"
+                min="0"
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Category
+              </label>
+              <input
+                type="text"
+                value={formData.category}
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                placeholder="e.g., Priority, Lifestyle, Long-term"
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: "20px" }}>
+              <label style={{ fontSize: "13px", fontWeight: 600, color: "#6B7280", display: "block", marginBottom: "6px" }}>
+                Deadline
+              </label>
+              <input
+                type="text"
+                value={formData.deadline}
+                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                placeholder="e.g., Dec 2026"
+                style={{
+                  width: "100%",
+                  padding: "10px 12px",
+                  fontSize: "14px",
+                  border: "1px solid #E5E7EB",
+                  borderRadius: "8px",
+                  outline: "none",
+                  boxSizing: "border-box",
+                }}
+              />
+            </div>
+
+            {error && (
+              <div style={{
+                backgroundColor: "#FEE2E2",
+                color: "#DC2626",
+                padding: "12px",
+                borderRadius: "8px",
+                fontSize: "13px",
+                marginBottom: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}>
+                <AlertCircle size={16} />
+                {error}
+              </div>
+            )}
+
+            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#374151",
+                  backgroundColor: "#fff",
+                  border: "1px solid #D1D5DB",
+                  borderRadius: "8px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.5 : 1,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  padding: "10px 20px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#fff",
+                  backgroundColor: loading ? "#9BE7D3" : "#2F6F63",
+                  border: "none",
+                  borderRadius: "8px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.7 : 1,
+                }}
+              >
+                {loading ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+};
+
+// ─── Delete Confirmation Modal ─────────────────────────────────────────────────
+const DeleteConfirmModal = ({ isOpen, goal, onClose, onConfirm }) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleConfirm = async () => {
+    try {
+      setLoading(true);
+      await api.goals.delete(goal.id);
+      onConfirm();
+      onClose();
+    } catch (err) {
+      alert(err.message || "Failed to delete goal");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen || !goal) return null;
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          zIndex: 50,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <div
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            backgroundColor: "#fff",
+            borderRadius: "16px",
+            width: "90%",
+            maxWidth: "400px",
+            padding: "24px",
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+            fontFamily: "Inter, sans-serif",
+          }}
+        >
+          <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#111827", margin: "0 0 8px" }}>
+            Delete Goal?
+          </h2>
+          <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 20px" }}>
+            Are you sure you want to delete "<strong>{goal.name}</strong>"? This action cannot be undone.
+          </p>
+
+          <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={loading}
+              style={{
+                padding: "10px 20px",
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#374151",
+                backgroundColor: "#fff",
+                border: "1px solid #D1D5DB",
+                borderRadius: "8px",
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.5 : 1,
+              }}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleConfirm}
+              disabled={loading}
+              style={{
+                padding: "10px 20px",
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#fff",
+                backgroundColor: loading ? "#FECACA" : "#DC2626",
+                border: "none",
+                borderRadius: "8px",
+                cursor: loading ? "not-allowed" : "pointer",
+                opacity: loading ? 0.7 : 1,
+              }}
+            >
+              {loading ? "Deleting..." : "Delete Goal"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export const Goals = () => {
   const [goalsData, setGoalsData] = useState(goals);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isNewGoalModalOpen, setIsNewGoalModalOpen] = useState(false);
+  const [isAddMoneyModalOpen, setIsAddMoneyModalOpen] = useState(false);
+  const [isEditGoalModalOpen, setIsEditGoalModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     loadGoals();
@@ -587,9 +1159,47 @@ export const Goals = () => {
     }
   };
 
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+  };
+
   const handleNewGoal = (newGoal) => {
     setGoalsData([newGoal, ...goalsData]);
-    setIsModalOpen(false);
+    setIsNewGoalModalOpen(false);
+    showToast("Goal created successfully!");
+  };
+
+  const handleAddMoney = (goal) => {
+    setSelectedGoal(goal);
+    setIsAddMoneyModalOpen(true);
+  };
+
+  const handleAddMoneySuccess = () => {
+    setIsAddMoneyModalOpen(false);
+    showToast("Money added successfully!");
+    loadGoals();
+  };
+
+  const handleEditGoal = (goal) => {
+    setSelectedGoal(goal);
+    setIsEditGoalModalOpen(true);
+  };
+
+  const handleEditGoalSuccess = () => {
+    setIsEditGoalModalOpen(false);
+    showToast("Goal updated successfully!");
+    loadGoals();
+  };
+
+  const handleDeleteGoal = (goal) => {
+    setSelectedGoal(goal);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteSuccess = () => {
+    setIsDeleteModalOpen(false);
+    setGoalsData(goalsData.filter(g => g.id !== selectedGoal.id));
+    showToast("Goal deleted successfully!");
   };
 
   const totalSaved  = goalsData.reduce((s, g) => s + (g.saved || 0), 0);
@@ -623,7 +1233,7 @@ export const Goals = () => {
               backgroundColor: "#E6F4F1", color: "#2F6F63",
               fontSize: "12px", fontWeight: 600,
             }}>
-              {goals.length} Targets
+              {goalsData.length} Targets
             </span>
           </div>
           <p style={{ fontSize: "14px", color: "#6B7280", margin: 0 }}>
@@ -640,12 +1250,12 @@ export const Goals = () => {
             display: "flex", alignItems: "center", gap: "8px", cursor: "pointer",
           }}>
             <SlidersHorizontal size={15} />
-            All Goals ({goals.length})
+            All Goals ({goalsData.length})
             <ChevronDown size={14} />
           </button>
           {/* new goal */}
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsNewGoalModalOpen(true)}
             style={{
             padding: "9px 18px", borderRadius: "8px",
             backgroundColor: "#2F6F63", border: "none",
@@ -698,7 +1308,15 @@ export const Goals = () => {
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
-          {goalsData.map(g => <GoalCard key={g.id} goal={g} />)}
+          {goalsData.map(g => (
+            <GoalCard
+              key={g.id}
+              goal={g}
+              onEdit={handleEditGoal}
+              onAddMoney={handleAddMoney}
+              onDelete={handleDeleteGoal}
+            />
+          ))}
         </div>
       )}
 
@@ -767,7 +1385,14 @@ export const Goals = () => {
         </div>
       </div>
 
-      <NewGoalModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleNewGoal} />
+      {/* Modals */}
+      <NewGoalModal isOpen={isNewGoalModalOpen} onClose={() => setIsNewGoalModalOpen(false)} onSave={handleNewGoal} />
+      <AddMoneyModal isOpen={isAddMoneyModalOpen} goal={selectedGoal} onClose={() => setIsAddMoneyModalOpen(false)} onSuccess={handleAddMoneySuccess} />
+      <EditGoalModal isOpen={isEditGoalModalOpen} goal={selectedGoal} onClose={() => setIsEditGoalModalOpen(false)} onSuccess={handleEditGoalSuccess} />
+      <DeleteConfirmModal isOpen={isDeleteModalOpen} goal={selectedGoal} onClose={() => setIsDeleteModalOpen(false)} onConfirm={handleDeleteSuccess} />
+
+      {/* Toast notification */}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 };
