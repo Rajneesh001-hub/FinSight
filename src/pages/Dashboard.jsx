@@ -1,13 +1,15 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   ChevronRight, Download, Plus, Wallet, TrendingUp,
   TrendingDown, PiggyBank, ArrowUp, ArrowDown,
-  AlertCircle, ChevronRight as CR, Shield, Laptop, Plane,
+  AlertCircle, ChevronRight as CR, Shield, Laptop, Plane, CheckCircle, Loader,
 } from "lucide-react";
 import {
   summaryCards, spendingByCategory, incomeVsExpenses,
   monthlyBudgets, financialGoals, recentTransactions, filterCategories,
 } from "../data/mockData";
+import { AddTransactionModal } from "../components/AddTransactionModal";
+import { api } from "../utils/apiClient";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 const fmtINR = (n) => {
@@ -435,99 +437,216 @@ const TransactionsTable = ({ transactions, categories }) => {
   );
 };
 
+// ─── Toast Component ──────────────────────────────────────────────────────────
+const Toast = ({ message, type, onClose }) => {
+  React.useEffect(() => {
+    const timer = setTimeout(onClose, 3000);
+    return () => clearTimeout(timer);
+  }, [onClose]);
+
+  return (
+    <div style={{
+      position: "fixed",
+      bottom: "24px",
+      right: "24px",
+      zIndex: 1000,
+      animation: "slideIn 0.3s ease-out",
+    }}>
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "12px",
+        padding: "12px 16px",
+        borderRadius: "8px",
+        backgroundColor: type === "success" ? "#D1FAE5" : "#FEE2E2",
+        color: type === "success" ? "#065F46" : "#7F1D1D",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.15)",
+      }}>
+        {type === "success" ? (
+          <CheckCircle size={18} />
+        ) : (
+          <AlertCircle size={18} />
+        )}
+        <span style={{ fontSize: "13px", fontWeight: 500 }}>{message}</span>
+      </div>
+    </div>
+  );
+};
+
 // ─── Dashboard Page ───────────────────────────────────────────────────────────
-export const Dashboard = () => (
-  <div style={{ backgroundColor: "#F6F7F9", minHeight: "100vh", fontFamily: "Inter, sans-serif" }}>
+export const Dashboard = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState("success");
 
-    {/* ── Page header: white bar, full width, same 32px padding ── */}
-    <div style={{ backgroundColor: "#fff", borderBottom: "1px solid #E5E7EB" }}>
-      <div style={{ padding: "16px 32px" }}>
+  const handleAddTransactionClick = () => {
+    setIsModalOpen(true);
+  };
 
-        {/* breadcrumb */}
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#9CA3AF", marginBottom: "10px" }}>
-          <span style={{ letterSpacing: ".04em" }}>PORTFOLIO</span>
-          <ChevronRight size={12}/>
-          <span style={{ color: "#4B5563", fontWeight: 600, letterSpacing: ".04em" }}>DASHBOARD</span>
-        </div>
+  const handleModalClose = () => {
+    setIsModalOpen(false);
+  };
 
-        {/* title + controls — same row, same 32px indent */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
-          <div>
-            <h1 style={{ fontSize: "28px", fontWeight: 700, color: "#111827", margin: "0 0 3px", lineHeight: 1.2 }}>Dashboard</h1>
-            <p style={{ fontSize: "13px", color: "#6B7280", margin: 0 }}>
-              Welcome back, Arjun. Here's your consolidated financial position for Mumbai
-            </p>
+  const handleTransactionSave = (newTransaction) => {
+    setIsModalOpen(false);
+    setToastMessage("Transaction added successfully!");
+    setToastType("success");
+  };
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+      await api.export.csv();
+      setToastMessage("Export completed successfully!");
+      setToastType("success");
+    } catch (err) {
+      setToastMessage(err.message || "Failed to export data");
+      setToastType("error");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  return (
+    <div style={{ backgroundColor: "#F6F7F9", minHeight: "100vh", fontFamily: "Inter, sans-serif" }}>
+      <style>{`
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes slideIn {
+          from {
+            transform: translateX(400px);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
+
+      {/* ── Page header: white bar, full width, same 32px padding ── */}
+      <div style={{ backgroundColor: "#fff", borderBottom: "1px solid #E5E7EB" }}>
+        <div style={{ padding: "16px 32px" }}>
+
+          {/* breadcrumb */}
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "12px", color: "#9CA3AF", marginBottom: "10px" }}>
+            <span style={{ letterSpacing: ".04em" }}>PORTFOLIO</span>
+            <ChevronRight size={12}/>
+            <span style={{ color: "#4B5563", fontWeight: 600, letterSpacing: ".04em" }}>DASHBOARD</span>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-            <select style={{
-              padding: "8px 32px 8px 12px", border: "1px solid #D1D5DB", borderRadius: "8px",
-              fontSize: "13px", color: "#374151", backgroundColor: "#fff",
-              cursor: "pointer", fontFamily: "Inter, sans-serif", outline: "none",
-              appearance: "none",
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%236B7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
-              backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center",
-            }}>
-              <option>This month (Oct 2026)</option>
-              <option>Last month</option>
-              <option>Last 3 months</option>
-              <option>Last 6 months</option>
-            </select>
-            <button style={{
-              padding: "8px 16px", border: "1px solid #D1D5DB", borderRadius: "8px",
-              backgroundColor: "#fff", fontSize: "13px", fontWeight: 500, color: "#374151",
-              display: "flex", alignItems: "center", gap: "6px", cursor: "pointer",
-            }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = "#F9FAFB"}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = "#fff"}
-            >
-              <Download size={14}/> Export
-            </button>
-            <button style={{
-              padding: "8px 18px", backgroundColor: "#2F6F63", border: "none",
-              borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: "#fff",
-              display: "flex", alignItems: "center", gap: "6px", cursor: "pointer",
-            }}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = "#275750"}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = "#2F6F63"}
-            >
-              <Plus size={14}/> Add transaction
-            </button>
+          {/* title + controls — same row, same 32px indent */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "16px" }}>
+            <div>
+              <h1 style={{ fontSize: "28px", fontWeight: 700, color: "#111827", margin: "0 0 3px", lineHeight: 1.2 }}>Dashboard</h1>
+              <p style={{ fontSize: "13px", color: "#6B7280", margin: 0 }}>
+                Welcome back, Arjun. Here's your consolidated financial position for Mumbai
+              </p>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+              <select style={{
+                padding: "8px 32px 8px 12px", border: "1px solid #D1D5DB", borderRadius: "8px",
+                fontSize: "13px", color: "#374151", backgroundColor: "#fff",
+                cursor: "pointer", fontFamily: "Inter, sans-serif", outline: "none",
+                appearance: "none",
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='%236B7280' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`,
+                backgroundRepeat: "no-repeat", backgroundPosition: "right 10px center",
+              }}>
+                <option>This month (Oct 2026)</option>
+                <option>Last month</option>
+                <option>Last 3 months</option>
+                <option>Last 6 months</option>
+              </select>
+              <button 
+                onClick={handleExport}
+                disabled={isExporting}
+                style={{
+                  padding: "8px 16px", border: "1px solid #D1D5DB", borderRadius: "8px",
+                  backgroundColor: "#fff", fontSize: "13px", fontWeight: 500, color: "#374151",
+                  display: "flex", alignItems: "center", gap: "6px", cursor: isExporting ? "not-allowed" : "pointer",
+                  opacity: isExporting ? 0.6 : 1,
+                }}
+                onMouseEnter={e => !isExporting && (e.currentTarget.style.backgroundColor = "#F9FAFB")}
+                onMouseLeave={e => !isExporting && (e.currentTarget.style.backgroundColor = "#fff")}
+              >
+                {isExporting ? (
+                  <>
+                    <Loader size={14} style={{ animation: "spin 1s linear infinite" }} /> Exporting...
+                  </>
+                ) : (
+                  <>
+                    <Download size={14}/> Export
+                  </>
+                )}
+              </button>
+              <button 
+                onClick={handleAddTransactionClick}
+                style={{
+                  padding: "8px 18px", backgroundColor: "#2F6F63", border: "none",
+                  borderRadius: "8px", fontSize: "13px", fontWeight: 500, color: "#fff",
+                  display: "flex", alignItems: "center", gap: "6px", cursor: "pointer",
+                }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = "#275750"}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = "#2F6F63"}
+              >
+                <Plus size={14}/> Add transaction
+              </button>
+            </div>
           </div>
+
+        </div>
+      </div>
+
+      {/* ── Body: same 32px padding left/right, no max-width centering ── */}
+      <div style={{ padding: "24px 32px" }}>
+
+        {/* Row 1 – 4 summary cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
+          <SummaryCard label={summaryCards.totalBalance.label} amount={summaryCards.totalBalance.amount} change={summaryCards.totalBalance.change} icon="wallet" color="teal"/>
+          <SummaryCard label={summaryCards.income.label}       amount={summaryCards.income.amount}       change={summaryCards.income.change}       icon="trending-up"   color="green"/>
+          <SummaryCard label={summaryCards.expenses.label}     amount={summaryCards.expenses.amount}     change={summaryCards.expenses.change}     icon="trending-down" color="red"/>
+          <SummaryCard label={summaryCards.savings.label}      amount={summaryCards.savings.amount}      change={summaryCards.savings.change}      icon="piggy-bank"    color="teal"/>
         </div>
 
+        {/* Row 2 – Donut + Bar chart side by side */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
+          <DonutChart data={spendingByCategory.categories}/>
+          <BarChart
+            data={incomeVsExpenses.months}
+            title={incomeVsExpenses.title}
+            subtitle={incomeVsExpenses.subtitle}
+          />
+        </div>
+
+        {/* Row 3 – Budgets + Goals side by side */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
+          <BudgetSection budgets={monthlyBudgets}/>
+          <GoalsSection  goals={financialGoals}/>
+        </div>
+
+        {/* Row 4 – Full-width transactions */}
+        <TransactionsTable transactions={recentTransactions} categories={filterCategories}/>
       </div>
-    </div>
 
-    {/* ── Body: same 32px padding left/right, no max-width centering ── */}
-    <div style={{ padding: "24px 32px" }}>
+      {/* Add Transaction Modal */}
+      <AddTransactionModal 
+        isOpen={isModalOpen} 
+        onClose={handleModalClose}
+        onSave={handleTransactionSave}
+      />
 
-      {/* Row 1 – 4 summary cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "16px", marginBottom: "24px" }}>
-        <SummaryCard label={summaryCards.totalBalance.label} amount={summaryCards.totalBalance.amount} change={summaryCards.totalBalance.change} icon="wallet" color="teal"/>
-        <SummaryCard label={summaryCards.income.label}       amount={summaryCards.income.amount}       change={summaryCards.income.change}       icon="trending-up"   color="green"/>
-        <SummaryCard label={summaryCards.expenses.label}     amount={summaryCards.expenses.amount}     change={summaryCards.expenses.change}     icon="trending-down" color="red"/>
-        <SummaryCard label={summaryCards.savings.label}      amount={summaryCards.savings.amount}      change={summaryCards.savings.change}      icon="piggy-bank"    color="teal"/>
-      </div>
-
-      {/* Row 2 – Donut + Bar chart side by side */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
-        <DonutChart data={spendingByCategory.categories}/>
-        <BarChart
-          data={incomeVsExpenses.months}
-          title={incomeVsExpenses.title}
-          subtitle={incomeVsExpenses.subtitle}
+      {/* Toast Notification */}
+      {toastMessage && (
+        <Toast 
+          message={toastMessage} 
+          type={toastType}
+          onClose={() => setToastMessage("")}
         />
-      </div>
-
-      {/* Row 3 – Budgets + Goals side by side */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" }}>
-        <BudgetSection budgets={monthlyBudgets}/>
-        <GoalsSection  goals={financialGoals}/>
-      </div>
-
-      {/* Row 4 – Full-width transactions */}
-      <TransactionsTable transactions={recentTransactions} categories={filterCategories}/>
+      )}
     </div>
-  </div>
-);
+  );
+};
