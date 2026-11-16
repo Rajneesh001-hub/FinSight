@@ -5,6 +5,9 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
 // Get JWT token from active Supabase session
 const getToken = async () => {
   const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    console.warn('[API] No active session - token is null');
+  }
   return session?.access_token || null;
 };
 
@@ -48,7 +51,7 @@ export const api = {
   transactions: {
     list:   (params = {}) => {
       const q = new URLSearchParams(params).toString();
-      return request("GET", `/transactions${q ? "?" + q : ""}`);
+      return request("GET", `/transactions${q ? "?" + q : ""}`).then(res => res.data || res);
     },
     create: (data) => request("POST", "/transactions", data),
     update: (id, data) => request("PUT", `/transactions/${id}`, data),
@@ -57,7 +60,7 @@ export const api = {
 
   // Budgets
   budgets: {
-    list:   () => request("GET", "/budgets"),
+    list:   () => request("GET", "/budgets").then(res => res.data || res),
     create: (data) => request("POST", "/budgets", data),
     update: (id, data) => request("PUT", `/budgets/${id}`, data),
     delete: (id) => request("DELETE", `/budgets/${id}`),
@@ -65,7 +68,7 @@ export const api = {
 
   // Goals
   goals: {
-    list:   () => request("GET", "/goals"),
+    list:   () => request("GET", "/goals").then(res => res.data || res),
     create: (data) => request("POST", "/goals", data),
     update: (id, data) => request("PUT", `/goals/${id}`, data),
     delete: (id) => request("DELETE", `/goals/${id}`),
