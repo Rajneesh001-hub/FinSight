@@ -63,6 +63,8 @@ const createTransaction = async (req, res) => {
     const { amount, category, date, type, description } = req.body;
     const userId = req.user.id;
 
+    console.log('[CREATE TX] Body received:', req.body);
+
     // Validate required fields
     if (!amount || !category || !date || !type) {
       return res.status(400).json({

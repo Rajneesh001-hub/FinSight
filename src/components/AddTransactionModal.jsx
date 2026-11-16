@@ -92,12 +92,9 @@ export const AddTransactionModal = ({ isOpen, onClose, onSave }) => {
       const transaction = {
         date: formData.date,
         description: formData.description,
-        details: formData.notes || "",
         category: formData.category,
-        account: formData.account,
-        amount: formData.type === "Income" 
-          ? parseFloat(formData.amount) 
-          : -parseFloat(formData.amount),
+        type: formData.type.toLowerCase(),
+        amount: parseFloat(formData.amount),
       };
 
       const result = await api.transactions.create(transaction);

@@ -398,9 +398,8 @@ const NewGoalModal = ({ isOpen, onClose, onSave }) => {
       setLoading(true);
       const newGoal = await api.goals.create({
         name: formData.name,
-        targetAmount: target,
+        target_amount: target,
         deadline: formData.deadline,
-        currentAmount: 0,
       });
       onSave(newGoal);
       onClose();

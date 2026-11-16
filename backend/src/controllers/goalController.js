@@ -68,6 +68,8 @@ const createGoal = async (req, res) => {
     const { name, target_amount, deadline, category } = req.body;
     const userId = req.user.id;
 
+    console.log('[CREATE GOAL] Body received:', req.body);
+
     // Validate required fields
     if (!name || !target_amount || !deadline) {
       return res.status(400).json({

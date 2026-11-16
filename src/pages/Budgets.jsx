@@ -480,6 +480,7 @@ const NewBudgetModal = ({ isOpen, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     category: "Food & Groceries",
     limit: "",
+    period: "monthly",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -512,11 +513,12 @@ const NewBudgetModal = ({ isOpen, onClose, onSave }) => {
       setLoading(true);
       const newBudget = await api.budgets.create({
         category: formData.category,
-        limit: limit,
+        limit_amount: limit,
+        period: formData.period || "monthly",
       });
       onSave();
       onClose();
-      setFormData({ category: "Food & Groceries", limit: "" });
+      setFormData({ category: "Food & Groceries", limit: "", period: "monthly" });
     } catch (err) {
       setError(err.message || "Failed to create budget");
     } finally {
@@ -714,9 +716,7 @@ const EditBudgetModal = ({ isOpen, onClose, onSave, budget }) => {
     try {
       setLoading(true);
       const updatedBudget = await api.budgets.update(budget.id, {
-        name: formData.name,
-        description: formData.description,
-        limit: amount,
+        limit_amount: amount,
         category: formData.category,
         period: formData.period,
       });
