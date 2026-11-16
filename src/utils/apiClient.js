@@ -1,6 +1,6 @@
 import { supabase } from "./supabaseClient";
 
-const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5001/api";
+const BASE_URL = '/api';
 
 // Get JWT token from active Supabase session
 const getToken = async () => {
@@ -98,6 +98,14 @@ export const api = {
       const res = await fetch(`${BASE_URL}/export${q ? "?" + q : ""}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(errText || "Export failed");
+      }
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("text/csv") && !contentType.includes("application/octet-stream")) {
+        throw new Error("Unexpected response format from export endpoint");
+      }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

@@ -73,10 +73,9 @@ export const Transactions = () => {
   const loadTransactions = async () => {
     try {
       setLoading(true);
-      const data = await api.transactions.list({ limit: 100 });
-      if (Array.isArray(data)) {
-        setTransactions(data);
-      }
+      const result = await api.transactions.list({ limit: 100 });
+      const rows = Array.isArray(result) ? result : (result?.data ?? []);
+      setTransactions(rows);
     } catch (err) {
       console.error("Failed to load transactions:", err);
       // Keep mock data on failure
@@ -86,8 +85,9 @@ export const Transactions = () => {
   };
 
   // Handle saving new transaction
-  const handleSaveTransaction = (newTransaction) => {
-    setTransactions([newTransaction, ...transactions]);
+  const handleSaveTransaction = async (newTransaction) => {
+    await loadTransactions();
+    setIsModalOpen(false);
     setSuccessMessage("Transaction added successfully!");
     setTimeout(() => setSuccessMessage(""), 3000);
   };

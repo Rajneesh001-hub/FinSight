@@ -8,6 +8,12 @@ export default defineConfig({
     host: 'localhost',
     open: false,
     middlewareMode: false,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+      }
+    }
   },
   build: {
     outDir: 'dist',

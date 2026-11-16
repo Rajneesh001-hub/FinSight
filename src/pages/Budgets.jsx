@@ -514,7 +514,7 @@ const NewBudgetModal = ({ isOpen, onClose, onSave }) => {
         category: formData.category,
         limit: limit,
       });
-      onSave(newBudget);
+      onSave();
       onClose();
       setFormData({ category: "Food & Groceries", limit: "" });
     } catch (err) {
@@ -720,7 +720,7 @@ const EditBudgetModal = ({ isOpen, onClose, onSave, budget }) => {
         category: formData.category,
         period: formData.period,
       });
-      onSave(updatedBudget);
+      onSave();
       onClose();
     } catch (err) {
       setError(err.message || "Failed to update budget");
@@ -991,27 +991,51 @@ export const Budgets = () => {
   const loadBudgets = async () => {
     try {
       setLoading(true);
-      const data = await api.budgets.list();
-      if (data && data.totalBudget) {
-        setBudgetsData(data);
+      // api.budgets.list() already unwraps .data, so rows is an array
+      const rows = await api.budgets.list();
+      if (Array.isArray(rows) && rows.length > 0) {
+        const iconMap = {
+          'Food & Groceries': { icon: Utensils, iconBg: '#FEF3C7', iconColor: '#D97706' },
+          'Shopping & Lifestyle': { icon: ShoppingBag, iconBg: '#FEE2E2', iconColor: '#DC2626' },
+          'Transportation & Fuel': { icon: Car, iconBg: '#D1FAE5', iconColor: '#059669' },
+          'Utilities & Subscriptions': { icon: Zap, iconBg: '#E0E7FF', iconColor: '#4F46E5' },
+          'Office & Workspace': { icon: Briefcase, iconBg: '#E6F4F1', iconColor: '#2F6F63' },
+          'Health & Personal Care': { icon: Heart, iconBg: '#FCE7F3', iconColor: '#DB2777' },
+        };
+        const categories = rows.map((r) => {
+          const im = iconMap[r.category] || { icon: Briefcase, iconBg: '#E6F4F1', iconColor: '#2F6F63' };
+          const spent = r.spent_amount ?? r.spent ?? 0;
+          const limit = r.limit_amount ?? r.limit ?? r.amount ?? 0;
+          const pctVal = limit > 0 ? (spent / limit) * 100 : 0;
+          const status = pctVal >= 100 ? 'danger' : pctVal >= 85 ? 'warning' : 'healthy';
+          return {
+            id: r.id,
+            name: r.name || r.category,
+            subtitle: r.description || r.category,
+            icon: im.icon,
+            iconBg: im.iconBg,
+            iconColor: im.iconColor,
+            spent,
+            limit,
+            status,
+          };
+        });
+        const totalBudget = categories.reduce((s, c) => s + c.limit, 0);
+        const totalSpent = categories.reduce((s, c) => s + c.spent, 0);
+        setBudgetsData({ totalBudget, totalSpent, daysRemaining: 5, categories });
       }
     } catch (err) {
-      console.error("Failed to load budgets:", err);
-      setError("Failed to load budgets. Using demo data.");
+      console.error('Failed to load budgets:', err);
+      setError('Failed to load budgets. Using demo data.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleNewBudget = (newBudget) => {
-    if (budgetsData.categories) {
-      setBudgetsData({
-        ...budgetsData,
-        categories: [newBudget, ...budgetsData.categories],
-      });
-    }
+  const handleNewBudget = () => {
     setIsCreateModalOpen(false);
-    setSuccessMessage("Budget created successfully!");
+    setSuccessMessage('Budget created successfully!');
+    loadBudgets();
   };
 
   const handleEditClick = (budget) => {
@@ -1023,18 +1047,11 @@ export const Budgets = () => {
     setDeleteConfirm(budget);
   };
 
-  const handleEditBudget = (updatedBudget) => {
-    if (budgetsData.categories) {
-      setBudgetsData({
-        ...budgetsData,
-        categories: budgetsData.categories.map((cat) =>
-          cat.id === updatedBudget.id ? updatedBudget : cat
-        ),
-      });
-    }
+  const handleEditBudget = () => {
     setIsEditModalOpen(false);
     setEditingBudget(null);
-    setSuccessMessage("Budget updated successfully!");
+    setSuccessMessage('Budget updated successfully!');
+    loadBudgets();
   };
 
   const handleConfirmDelete = async () => {

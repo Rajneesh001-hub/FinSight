@@ -1130,13 +1130,13 @@ const DeleteConfirmModal = ({ isOpen, goal, onClose, onConfirm }) => {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 export const Goals = () => {
-  const [goalsData, setGoalsData] = useState(goals);
+  const [goalsData, setGoalsData] = useState([]);
   const [isNewGoalModalOpen, setIsNewGoalModalOpen] = useState(false);
   const [isAddMoneyModalOpen, setIsAddMoneyModalOpen] = useState(false);
   const [isEditGoalModalOpen, setIsEditGoalModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [toast, setToast] = useState(null);
 
@@ -1147,13 +1147,43 @@ export const Goals = () => {
   const loadGoals = async () => {
     try {
       setLoading(true);
-      const data = await api.goals.list();
-      if (Array.isArray(data)) {
-        setGoalsData(data);
+      const rows = await api.goals.list(); // already unwraps .data
+      if (Array.isArray(rows)) {
+        const iconMap = {
+          shield: Shield,
+          laptop: Monitor,
+          plane: Plane,
+          building: Building,
+          default: Target,
+        };
+        const mapped = rows.map((r) => ({
+          id: r.id,
+          icon: iconMap[r.icon] || Target,
+          iconBg: r.icon_bg || '#E6F4F1',
+          iconColor: r.icon_color || '#2F6F63',
+          name: r.name,
+          subtitle: r.description || '',
+          tag: r.category || r.tag || 'Goal',
+          tagBg: '#E6F4F1',
+          tagColor: '#2F6F63',
+          tagIcon: null,
+          pct: r.target_amount > 0 ? Math.round((r.current_amount / r.target_amount) * 100) : 0,
+          saved: r.current_amount ?? 0,
+          target: r.target_amount ?? 0,
+          remaining: (r.target_amount ?? 0) - (r.current_amount ?? 0),
+          remainingLabel: `₹${((r.target_amount ?? 0) - (r.current_amount ?? 0)).toLocaleString('en-IN')} to go`,
+          remainingColor: '#D97706',
+          dueLabel: r.deadline ? `Target: ${r.deadline}` : '',
+          daysLeft: '',
+          autoLabel: null,
+          status: (r.current_amount ?? 0) >= (r.target_amount ?? 0) ? 'completed' : 'active',
+          rowLabel: 'Remaining balance',
+        }));
+        setGoalsData(mapped);
       }
     } catch (err) {
-      console.error("Failed to load goals:", err);
-      setError("Failed to load goals. Using demo data.");
+      console.error('Failed to load goals:', err);
+      setError('Failed to load goals.');
     } finally {
       setLoading(false);
     }
@@ -1164,9 +1194,9 @@ export const Goals = () => {
   };
 
   const handleNewGoal = (newGoal) => {
-    setGoalsData([newGoal, ...goalsData]);
     setIsNewGoalModalOpen(false);
     showToast("Goal created successfully!");
+    loadGoals();
   };
 
   const handleAddMoney = (goal) => {
@@ -1198,8 +1228,8 @@ export const Goals = () => {
 
   const handleDeleteSuccess = () => {
     setIsDeleteModalOpen(false);
-    setGoalsData(goalsData.filter(g => g.id !== selectedGoal.id));
     showToast("Goal deleted successfully!");
+    loadGoals();
   };
 
   const totalSaved  = goalsData.reduce((s, g) => s + (g.saved || 0), 0);
