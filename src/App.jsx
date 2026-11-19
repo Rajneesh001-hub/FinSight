@@ -21,6 +21,20 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
+  // Apply saved theme on mount and listen for changes from Settings
+  useEffect(() => {
+    const applyTheme = () => {
+      try {
+        const prefs = JSON.parse(localStorage.getItem("finsight_preferences") || "{}");
+        const theme = (prefs.theme || "light").toLowerCase();
+        document.documentElement.setAttribute("data-theme", theme);
+      } catch {}
+    };
+    applyTheme();
+    window.addEventListener("finsight-theme-change", applyTheme);
+    return () => window.removeEventListener("finsight-theme-change", applyTheme);
+  }, []);
+
   // Check session on mount
   useEffect(() => {
     const getSession = async () => {
