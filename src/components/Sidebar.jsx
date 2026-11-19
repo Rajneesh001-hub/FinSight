@@ -11,6 +11,13 @@ import {
   X,
 } from "lucide-react";
 
+const getInitials = (name) => {
+  if (!name) return "U";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
 export const Sidebar = ({ activePage = "dashboard", onPageChange, isMobile, isOpen, setIsOpen, onLogout, userName = "User" }) => {
   const menuItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -187,7 +194,7 @@ export const Sidebar = ({ activePage = "dashboard", onPageChange, isMobile, isOp
               color: '#2F6F63',
               fontFamily: 'Inter, sans-serif'
             }}>
-              AM
+              {getInitials(userName)}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{

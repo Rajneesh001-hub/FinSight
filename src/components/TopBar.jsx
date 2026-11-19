@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Search,
   Bell,
@@ -6,11 +6,59 @@ import {
   ChevronDown,
   LogOut,
   Settings as SettingsIcon,
+  X,
+  ArrowUpRight,
+  ArrowDownRight,
 } from "lucide-react";
+import { transactionsMock } from "../data/mockData";
+
+const getInitials = (name) => {
+  if (!name) return "U";
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
+const formatAmount = (amount) => {
+  const abs = Math.abs(amount).toLocaleString("en-IN");
+  return amount >= 0 ? `+₹${abs}` : `-₹${abs}`;
+};
 
 export const TopBar = ({ userName = "Arjun Mehta", onLogout }) => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchFocus, setSearchFocus] = useState(false);
+  const searchRef = useRef(null);
+  const profileRef = useRef(null);
+
+  // Filter transactions by query
+  const query = searchQuery.trim().toLowerCase();
+  const results = query.length >= 1
+    ? transactionsMock.filter((t) =>
+        t.description.toLowerCase().includes(query) ||
+        t.category.toLowerCase().includes(query) ||
+        t.account.toLowerCase().includes(query) ||
+        t.details.toLowerCase().includes(query)
+      ).slice(0, 6)
+    : [];
+
+  const showDropdown = searchFocus && query.length >= 1;
+
+  // Close profile dropdown on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (profileRef.current && !profileRef.current.contains(e.target)) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    searchRef.current?.focus();
+  };
 
   return (
     <div style={{
@@ -26,8 +74,11 @@ export const TopBar = ({ userName = "Arjun Mehta", onLogout }) => {
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        {/* Left: Search */}
-        <div style={{ flex: 1, maxWidth: '448px' }}>
+        {/* Left: spacer to push search to center */}
+        <div style={{ flex: 1 }} />
+
+        {/* Center: Search */}
+        <div style={{ flex: 1, maxWidth: '448px', position: 'relative' }}>
           <div
             style={{
               display: 'flex',
@@ -40,15 +91,15 @@ export const TopBar = ({ userName = "Arjun Mehta", onLogout }) => {
               transition: 'all 0.2s ease'
             }}
           >
-            <Search
-              size={18}
-              color={searchFocus ? '#2F6F63' : '#9CA3AF'}
-            />
+            <Search size={18} color={searchFocus ? '#2F6F63' : '#9CA3AF'} />
             <input
+              ref={searchRef}
               type="text"
-              placeholder="Search transactions, reports..."
+              value={searchQuery}
+              placeholder="Search transactions, categories..."
+              onChange={(e) => setSearchQuery(e.target.value)}
               onFocus={() => setSearchFocus(true)}
-              onBlur={() => setSearchFocus(false)}
+              onBlur={() => setTimeout(() => setSearchFocus(false), 150)}
               style={{
                 backgroundColor: 'transparent',
                 outline: 'none',
@@ -59,15 +110,163 @@ export const TopBar = ({ userName = "Arjun Mehta", onLogout }) => {
                 fontFamily: 'Inter, sans-serif'
               }}
             />
+            {searchQuery && (
+              <button
+                onClick={clearSearch}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  color: '#9CA3AF'
+                }}
+              >
+                <X size={15} />
+              </button>
+            )}
           </div>
+
+          {/* Search Results Dropdown */}
+          {showDropdown && (
+            <div style={{
+              position: 'absolute',
+              top: 'calc(100% + 6px)',
+              left: 0,
+              right: 0,
+              backgroundColor: '#ffffff',
+              borderRadius: '10px',
+              boxShadow: '0 10px 25px -3px rgba(0,0,0,0.12), 0 4px 8px -2px rgba(0,0,0,0.07)',
+              border: '1px solid #E5E7EB',
+              overflow: 'hidden',
+              zIndex: 50
+            }}>
+              {results.length === 0 ? (
+                <div style={{
+                  padding: '16px',
+                  fontSize: '14px',
+                  color: '#6B7280',
+                  fontFamily: 'Inter, sans-serif',
+                  textAlign: 'center'
+                }}>
+                  No transactions found for "{searchQuery}"
+                </div>
+              ) : (
+                <>
+                  <div style={{
+                    padding: '8px 12px 4px',
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: '#9CA3AF',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontFamily: 'Inter, sans-serif'
+                  }}>
+                    Transactions
+                  </div>
+                  {results.map((t) => (
+                    <div
+                      key={t.id}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '10px 12px',
+                        cursor: 'pointer',
+                        transition: 'background-color 0.15s ease',
+                        borderTop: '1px solid #F3F4F6'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F9FAFB'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      {/* Icon */}
+                      <div style={{
+                        width: '32px',
+                        height: '32px',
+                        borderRadius: '8px',
+                        backgroundColor: t.amount >= 0 ? '#D1FAE5' : '#FEE2E2',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        marginRight: '10px'
+                      }}>
+                        {t.amount >= 0
+                          ? <ArrowUpRight size={16} color="#059669" />
+                          : <ArrowDownRight size={16} color="#DC2626" />
+                        }
+                      </div>
+                      {/* Text */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{
+                          fontSize: '13px',
+                          fontWeight: 500,
+                          color: '#111827',
+                          fontFamily: 'Inter, sans-serif',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          {t.description}
+                        </div>
+                        <div style={{
+                          fontSize: '11px',
+                          color: '#9CA3AF',
+                          fontFamily: 'Inter, sans-serif',
+                          marginTop: '1px'
+                        }}>
+                          {t.category} · {t.date}
+                        </div>
+                      </div>
+                      {/* Amount */}
+                      <div style={{
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        color: t.amount >= 0 ? '#059669' : '#DC2626',
+                        fontFamily: 'Inter, sans-serif',
+                        marginLeft: '12px',
+                        flexShrink: 0
+                      }}>
+                        {formatAmount(t.amount)}
+                      </div>
+                    </div>
+                  ))}
+                  {transactionsMock.filter((t) =>
+                    t.description.toLowerCase().includes(query) ||
+                    t.category.toLowerCase().includes(query) ||
+                    t.account.toLowerCase().includes(query) ||
+                    t.details.toLowerCase().includes(query)
+                  ).length > 6 && (
+                    <div style={{
+                      padding: '8px 12px',
+                      fontSize: '12px',
+                      color: '#2F6F63',
+                      fontFamily: 'Inter, sans-serif',
+                      textAlign: 'center',
+                      borderTop: '1px solid #F3F4F6',
+                      cursor: 'pointer',
+                      fontWeight: 500
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#F0FDF9'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      View all results →
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right: Icons and Profile */}
         <div style={{
+          flex: 1,
           display: 'flex',
           alignItems: 'center',
-          gap: '24px',
-          marginLeft: '32px'
+          justifyContent: 'flex-end',
+          gap: '24px'
         }}>
           {/* Notification Bell */}
           <button
@@ -116,7 +315,7 @@ export const TopBar = ({ userName = "Arjun Mehta", onLogout }) => {
           </button>
 
           {/* User Profile Dropdown */}
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative' }} ref={profileRef}>
             <button
               onClick={() => setIsProfileOpen(!isProfileOpen)}
               style={{
@@ -146,7 +345,7 @@ export const TopBar = ({ userName = "Arjun Mehta", onLogout }) => {
                 color: '#2F6F63',
                 fontFamily: 'Inter, sans-serif'
               }}>
-                AM
+                {getInitials(userName)}
               </div>
               <ChevronDown
                 size={16}
@@ -183,13 +382,6 @@ export const TopBar = ({ userName = "Arjun Mehta", onLogout }) => {
                     fontFamily: 'Inter, sans-serif'
                   }}>
                     {userName}
-                  </div>
-                  <div style={{
-                    fontSize: '12px',
-                    color: '#6B7280',
-                    fontFamily: 'Inter, sans-serif'
-                  }}>
-                    arjun.mehta@fintech.co
                   </div>
                 </div>
 

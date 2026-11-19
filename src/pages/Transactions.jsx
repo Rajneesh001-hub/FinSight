@@ -48,7 +48,7 @@ const iconMap = {
 };
 
 export const Transactions = () => {
-  const [transactions, setTransactions] = useState(transactionsMock);
+  const [transactions, setTransactions] = useState([]);
   const [selectedRows, setSelectedRows] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [dateRange, setDateRange] = useState("Oct 1, 2026 - Oct 31, 2026");

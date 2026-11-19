@@ -47,12 +47,21 @@ const server = http.createServer((req, res) => {
     if (err) {
       // SPA fallback — serve index.html for all routes
       fs.readFile(path.join(DIST, 'index.html'), (err2, html) => {
-        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.writeHead(200, {
+          'Content-Type': 'text/html',
+          'Cache-Control': 'no-store, no-cache, must-revalidate',
+          'Pragma': 'no-cache'
+        });
         res.end(html);
       });
     } else {
       const ext = path.extname(filePath);
-      res.writeHead(200, { 'Content-Type': mime[ext] || 'application/octet-stream' });
+      const isHtml = ext === '.html';
+      res.writeHead(200, {
+        'Content-Type': mime[ext] || 'application/octet-stream',
+        // No cache for HTML, long cache for hashed JS/CSS
+        'Cache-Control': isHtml ? 'no-store, no-cache, must-revalidate' : 'public, max-age=31536000'
+      });
       res.end(data);
     }
   });

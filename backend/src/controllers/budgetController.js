@@ -20,50 +20,41 @@ const getBudgets = async (req, res) => {
       });
     }
 
-    // Calculate current spending for each budget
+    // Calculate current monthly spending for each budget
     const now = new Date();
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
+    const monthStart = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
+    const monthEnd = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
 
     const enrichedBudgets = await Promise.all(
       budgets.map(async (budget) => {
-        let spending = 0;
+        const { data: transactions } = await supabase
+          .from('transactions')
+          .select('amount')
+          .eq('user_id', userId)
+          .eq('category', budget.category)
+          .eq('type', 'expense')
+          .gte('date', monthStart)
+          .lte('date', monthEnd);
 
-        if (budget.period === 'monthly') {
-          const monthStart = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
-          const monthEnd = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
+        const spending = transactions
+          ? transactions.reduce((sum, t) => sum + Number(t.amount), 0)
+          : 0;
 
-          const { data: transactions } = await supabase
-            .from('transactions')
-            .select('amount')
-            .eq('user_id', userId)
-            .eq('category', budget.category)
-            .eq('type', 'expense')
-            .gte('date', monthStart)
-            .lte('date', monthEnd);
-
-          spending = transactions ? transactions.reduce((sum, t) => sum + t.amount, 0) : 0;
-        } else if (budget.period === 'yearly') {
-          const yearStart = new Date(currentYear, 0, 1).toISOString().split('T')[0];
-          const yearEnd = new Date(currentYear, 11, 31).toISOString().split('T')[0];
-
-          const { data: transactions } = await supabase
-            .from('transactions')
-            .select('amount')
-            .eq('user_id', userId)
-            .eq('category', budget.category)
-            .eq('type', 'expense')
-            .gte('date', yearStart)
-            .lte('date', yearEnd);
-
-          spending = transactions ? transactions.reduce((sum, t) => sum + t.amount, 0) : 0;
-        }
+        // DB column is "budget_limit"; expose as limit_amount for frontend compatibility
+        const limitAmount = Number(budget.budget_limit ?? 0);
 
         return {
           ...budget,
+          limit_amount: limitAmount,
+          spent_amount: Math.round(spending * 100) / 100,
           current_spending: Math.round(spending * 100) / 100,
-          remaining: Math.round((budget.limit_amount - spending) * 100) / 100,
-          percentage_used: Math.round((spending / budget.limit_amount) * 100)
+          remaining: Math.round((limitAmount - spending) * 100) / 100,
+          percentage_used: limitAmount > 0
+            ? Math.round((spending / limitAmount) * 100)
+            : 0,
+          period: budget.period ?? 'monthly',
         };
       })
     );
@@ -87,25 +78,18 @@ const createBudget = async (req, res) => {
   try {
     const { category, limit_amount, period } = req.body;
     const userId = req.user.id;
+    console.log('[CREATE BUDGET] Body:', req.body, 'userId:', userId);
 
-    // Validate required fields
-    if (!category || !limit_amount || !period) {
+    if (!category || !limit_amount) {
       return res.status(400).json({
-        error: 'Missing required fields: category, limit_amount, period',
+        error: 'Missing required fields: category, limit_amount',
         code: 'VALIDATION_ERROR',
         status: 400
       });
     }
 
-    if (!['monthly', 'yearly'].includes(period)) {
-      return res.status(400).json({
-        error: 'Period must be either "monthly" or "yearly"',
-        code: 'VALIDATION_ERROR',
-        status: 400
-      });
-    }
-
-    if (isNaN(limit_amount) || limit_amount <= 0) {
+    const limitVal = parseFloat(limit_amount);
+    if (isNaN(limitVal) || limitVal <= 0) {
       return res.status(400).json({
         error: 'limit_amount must be a positive number',
         code: 'VALIDATION_ERROR',
@@ -113,19 +97,20 @@ const createBudget = async (req, res) => {
       });
     }
 
+    // Insert using the actual DB column names (no period column in this table)
+    const insertRow = {
+      user_id: userId,
+      category,
+      budget_limit: limitVal,
+    };
+
     const { data, error } = await supabase
       .from('budgets')
-      .insert([
-        {
-          user_id: userId,
-          category,
-          limit_amount: parseFloat(limit_amount),
-          period
-        }
-      ])
+      .insert([insertRow])
       .select();
 
     if (error) {
+      console.error('[CREATE BUDGET] DB error:', error);
       return res.status(500).json({
         error: 'Failed to create budget',
         code: 'DB_ERROR',
@@ -133,12 +118,19 @@ const createBudget = async (req, res) => {
         details: error.message
       });
     }
+    console.log('[CREATE BUDGET] Success, row:', data[0]);
 
+    const row = data[0];
     res.status(201).json({
-      data: data[0],
+      data: {
+        ...row,
+        limit_amount: Number(row.budget_limit ?? 0),
+        period: row.period ?? 'monthly',
+      },
       message: 'Budget created successfully'
     });
   } catch (error) {
+    console.error('[CREATE BUDGET] Caught exception:', error.message, error.stack);
     res.status(500).json({
       error: 'Server error',
       code: 'SERVER_ERROR',
@@ -173,8 +165,8 @@ const updateBudget = async (req, res) => {
 
     const updateData = {};
     if (category !== undefined) updateData.category = category;
-    if (limit_amount !== undefined) updateData.limit_amount = parseFloat(limit_amount);
-    if (period !== undefined) updateData.period = period;
+    if (limit_amount !== undefined) updateData.budget_limit = parseFloat(limit_amount);
+    // period column does not exist in the budgets table — do not include it
 
     const { data, error } = await supabase
       .from('budgets')
@@ -192,8 +184,13 @@ const updateBudget = async (req, res) => {
       });
     }
 
+    const row = data[0];
     res.status(200).json({
-      data: data[0],
+      data: {
+        ...row,
+        limit_amount: Number(row.budget_limit ?? 0),
+        period: row.period ?? 'monthly',
+      },
       message: 'Budget updated successfully'
     });
   } catch (error) {

@@ -955,7 +955,7 @@ const EditBudgetModal = ({ isOpen, onClose, onSave, budget }) => {
 // ─── main page ────────────────────────────────────────────────────────────────
 export const Budgets = () => {
   const [month, setMonth] = useState("October 2026");
-  const [budgetsData, setBudgetsData] = useState(budgetData);
+  const [budgetsData, setBudgetsData] = useState({ totalBudget: 0, totalSpent: 0, daysRemaining: 0, categories: [] });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState(null);
